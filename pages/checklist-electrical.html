@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist Eléctrico - Comisionamiento PWA</title>
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/sidebar.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/checklist.css">
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">Comisionamiento PWA</span>
+            </div>
+            <button class="sidebar-close" id="sidebarClose">✕</button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="../index.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="checklist-electrical.html" class="nav-item active">
+                <span class="nav-icon">⚡</span>
+                <span class="nav-text">Checklist Eléctrico</span>
+            </a>
+            <a href="checklist-instrumentation.html" class="nav-item">
+                <span class="nav-icon">📟</span>
+                <span class="nav-text">Checklist Instrumentación</span>
+            </a>
+            <a href="punchlist.html" class="nav-item">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Punchlist</span>
+                <span class="badge" id="punchlistBadge">0</span>
+            </a>
+            <a href="reports.html" class="nav-item">
+                <span class="nav-icon">📄</span>
+                <span class="nav-text">Reportes</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button id="themeToggle" class="theme-toggle-btn">
+                <span class="theme-icon-dark">🌙</span>
+                <span class="theme-icon-light">☀️</span>
+                <span class="theme-text">Modo oscuro</span>
+            </button>
+        </div>
+    </aside>
+    
+    <main class="main-content">
+        <header class="top-bar">
+            <button class="hamburger" id="hamburger">
+                <span></span><span></span><span></span>
+            </button>
+            <h1 class="page-title">Checklist Eléctrico</h1>
+            <div class="top-bar-actions">
+                <button id="themeToggleMobile" class="mobile-theme-toggle">🌙</button>
+                <button id="exportBtn" class="export-btn" aria-label="Exportar">📎</button>
+            </div>
+        </header>
+        
+        <div class="content-container">
+            <!-- Barra de progreso global -->
+            <div class="global-progress">
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="globalProgressFill" style="width: 0%"></div>
+                </div>
+                <span id="globalProgressText">0% completado</span>
+            </div>
+            
+            <!-- Checklist agrupado por sección -->
+            <div id="checklistContainer" class="checklist-container"></div>
+            
+            <!-- Botones de acción -->
+            <div class="checklist-actions">
+                <button id="expandAllBtn" class="btn-secondary">📂 Expandir todo</button>
+                <button id="collapseAllBtn" class="btn-secondary">📁 Colapsar todo</button>
+                <button id="addObservationBtn" class="btn-primary">➕ Agregar observación a punchlist</button>
+            </div>
+        </div>
+    </main>
+    
+    <script type="module">
+        import { initTheme } from '../js/core/theme.js';
+        import { initSidebar } from '../js/components/sidebar.js';
+        import { initStorage, getChecklistItems, saveChecklistItem } from '../js/core/storage.js';
+        import { electricalChecklistItems } from '../js/features/checklist/items-data.js';
+        import { renderChecklist, updateGlobalProgress } from '../js/components/checklist-item.js';
+        
+        let currentItems = [];
+        
+        async function loadChecklist() {
+            await initStorage();
+            
+            // Obtener items guardados
+            const savedItems = await getChecklistItems('electrical');
+            
+            // Combinar con datos base
+            currentItems = electricalChecklistItems.map(item => {
+                const saved = savedItems.find(s => s.itemId === item.id);
+                return {
+                    ...item,
+                    completed: saved?.completed || false,
+                    notes: saved?.notes || ''
+                };
+            });
+            
+            // Renderizar checklist
+            renderChecklist('checklistContainer', currentItems, 'electrical', onItemChange);
+            updateGlobalProgress(currentItems);
+        }
+        
+        async function onItemChange(itemId, completed, notes) {
+            await saveChecklistItem('electrical', itemId, completed, notes);
+            
+            // Actualizar item en el array local
+            const index = currentItems.findIndex(i => i.id === itemId);
+            if (index !== -1) {
+                currentItems[index].completed = completed;
+                currentItems[index].notes = notes;
+            }
+            
+            updateGlobalProgress(currentItems);
+        }
+        
+        function updateGlobalProgress(items) {
+            const total = items.length;
+            const completed = items.filter(i => i.completed).length;
+            const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+            
+            const fill = document.getElementById('globalProgressFill');
+            const text = document.getElementById('globalProgressText');
+            
+            if (fill) fill.style.width = `${percent}%`;
+            if (text) text.textContent = `${percent}% completado (${completed}/${total})`;
+        }
+        
+        // Manejar observación a punchlist
+        document.getElementById('addObservationBtn')?.addEventListener('click', () => {
+            // Obtener items no completados como opciones
+            const pendingItems = currentItems.filter(i => !i.completed);
+            if (pendingItems.length === 0) {
+                alert('No hay items pendientes para agregar a punchlist');
+                return;
+            }
+            
+            // Redirigir a punchlist con modo de creación
+            sessionStorage.setItem('pendingItems', JSON.stringify(pendingItems));
+            window.location.href = 'punchlist.html?action=add';
+        });
+        
+        // Expandir/colapsar
+        document.getElementById('expandAllBtn')?.addEventListener('click', () => {
+            document.querySelectorAll('.checklist-section').forEach(section => {
+                section.classList.add('expanded');
+            });
+        });
+        
+        document.getElementById('collapseAllBtn')?.addEventListener('click', () => {
+            document.querySelectorAll('.checklist-section').forEach(section => {
+                section.classList.remove('expanded');
+            });
+        });
+        
+        initTheme();
+        initSidebar();
+        loadChecklist();
+    </script>
+</body>
+</html>

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punchlist - Comisionamiento PWA</title>
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/sidebar.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/checklist.css">
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">Comisionamiento PWA</span>
+            </div>
+            <button class="sidebar-close" id="sidebarClose">✕</button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="../index.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="checklist-electrical.html" class="nav-item">
+                <span class="nav-icon">⚡</span>
+                <span class="nav-text">Checklist Eléctrico</span>
+            </a>
+            <a href="checklist-instrumentation.html" class="nav-item">
+                <span class="nav-icon">📟</span>
+                <span class="nav-text">Checklist Instrumentación</span>
+            </a>
+            <a href="punchlist.html" class="nav-item active">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Punchlist</span>
+                <span class="badge" id="punchlistBadge">0</span>
+            </a>
+            <a href="reports.html" class="nav-item">
+                <span class="nav-icon">📄</span>
+                <span class="nav-text">Reportes</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button id="themeToggle" class="theme-toggle-btn">
+                <span class="theme-icon-dark">🌙</span>
+                <span class="theme-icon-light">☀️</span>
+                <span class="theme-text">Modo oscuro</span>
+            </button>
+        </div>
+    </aside>
+    
+    <main class="main-content">
+        <header class="top-bar">
+            <button class="hamburger" id="hamburger">
+                <span></span><span></span><span></span>
+            </button>
+            <h1 class="page-title">Punchlist</h1>
+            <div class="top-bar-actions">
+                <button id="themeToggleMobile" class="mobile-theme-toggle">🌙</button>
+                <button id="addPunchlistBtn" class="btn-primary-small">+ Nueva observación</button>
+            </div>
+        </header>
+        
+        <div class="content-container">
+            <!-- Filtros -->
+            <div class="filters-bar">
+                <select id="filterPriority" class="filter-select">
+                    <option value="all">Todas las prioridades</option>
+                    <option value="high">Alta</option>
+                    <option value="medium">Media</option>
+                    <option value="low">Baja</option>
+                </select>
+                <select id="filterStatus" class="filter-select">
+                    <option value="all">Todos los estados</option>
+                    <option value="pending">Pendiente</option>
+                    <option value="in-progress">En Proceso</option>
+                    <option value="resolved">Resuelto</option>
+                </select>
+                <select id="filterCategory" class="filter-select">
+                    <option value="all">Todas las categorías</option>
+                    <option value="electrical">Eléctrico</option>
+                    <option value="instrumentation">Instrumentación</option>
+                </select>
+            </div>
+            
+            <!-- Lista de observaciones -->
+            <div id="punchlistContainer" class="punchlist-container"></div>
+        </div>
+    </main>
+    
+    <!-- Modal para agregar/editar observación -->
+    <div id="punchlistModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nueva observación</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select id="modalCategory">
+                        <option value="electrical">Eléctrico</option>
+                        <option value="instrumentation">Instrumentación</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Descripción de la observación *</label>
+                    <textarea id="modalText" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Prioridad</label>
+                    <select id="modalPriority">
+                        <option value="high">🔴 Alta</option>
+                        <option value="medium">🟡 Media</option>
+                        <option value="low">🟢 Baja</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Responsable asignado</label>
+                    <input type="text" id="modalAssigned" placeholder="Nombre del responsable">
+                </div>
+                <div class="form-group">
+                    <label>Fecha compromiso</label>
+                    <input type="date" id="modalDueDate">
+                </div>
+                <div class="form-group" id="statusGroup" style="display: none;">
+                    <label>Estado</label>
+                    <select id="modalStatus">
+                        <option value="pending">Pendiente</option>
+                        <option value="in-progress">En Proceso</option>
+                        <option value="resolved">Resuelto</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="modalCancel" class="btn-secondary">Cancelar</button>
+                <button id="modalSave" class="btn-primary">Guardar</button>
+                <button id="modalDelete" class="btn-danger" style="display: none;">Eliminar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initTheme } from '../js/core/theme.js';
+        import { initSidebar } from '../js/components/sidebar.js';
+        import { initStorage, getAllPunchlistItems, addPunchlistItem, updatePunchlistItem, deletePunchlistItem, getPunchlistSummary } from '../js/core/storage.js';
+        
+        let currentItems = [];
+        let editingId = null;
+        
+        async function loadPunchlist() {
+            await initStorage();
+            currentItems = await getAllPunchlistItems();
+            applyFilters();
+            updateBadge();
+        }
+        
+        function applyFilters() {
+            const priorityFilter = document.getElementById('filterPriority')?.value || 'all';
+            const statusFilter = document.getElementById('filterStatus')?.value || 'all';
+            const categoryFilter = document.getElementById('filterCategory')?.value || 'all';
+            
+            let filtered = [...currentItems];
+            
+            if (priorityFilter !== 'all') {
+                filtered = filtered.filter(i => i.priority === priorityFilter);
+            }
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(i => i.status === statusFilter);
+            }
+            if (categoryFilter !== 'all') {
+                filtered = filtered.filter(i => i.category === categoryFilter);
+            }
+            
+            renderPunchlist(filtered);
+        }
+        
+        function renderPunchlist(items) {
+            const container = document.getElementById('punchlistContainer');
+            if (!container) return;
+            
+            if (items.length === 0) {
+                container.innerHTML = '<p class="empty-message">No hay observaciones registradas</p>';
+                return;
+            }
+            
+            container.innerHTML = items.map(item => `
+                <div class="punchlist-item priority-${item.priority}" data-id="${item.id}">
+                    <div class="punchlist-header">
+                        <div class="punchlist-category">
+                            <span class="category-badge ${item.category}">
+                                ${item.category === 'electrical' ? '⚡ Eléctrico' : '📟 Instrumentación'}
+                            </span>
+                            <span class="priority-badge ${item.priority}">
+                                ${item.priority === 'high' ? '🔴 Alta' : item.priority === 'medium' ? '🟡 Media' : '🟢 Baja'}
+                            </span>
+                            <span class="status-badge ${item.status}">
+                                ${item.status === 'pending' ? '⏳ Pendiente' : item.status === 'in-progress' ? '🔄 En Proceso' : '✅ Resuelto'}
+                            </span>
+                        </div>
+                        <div class="punchlist-actions">
+                            <button class="edit-btn" data-id="${item.id}">✏️</button>
+                            <button class="delete-btn" data-id="${item.id}">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="punchlist-text">${escapeHtml(item.text)}</div>
+                    <div class="punchlist-meta">
+                        ${item.assigned ? `<span>👤 ${escapeHtml(item.assigned)}</span>` : ''}
+                        ${item.dueDate ? `<span>📅 ${formatDate(item.dueDate)}</span>` : ''}
+                        <span>🕒 ${formatDate(item.createdAt)}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Event listeners para botones
+            container.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', () => editItem(parseInt(btn.dataset.id)));
+            });
+            container.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => deleteItem(parseInt(btn.dataset.id)));
+            });
+        }
+        
+        async function updateBadge() {
+            const summary = await getPunchlistSummary();
+            const badge = document.getElementById('punchlistBadge');
+            if (badge) badge.textContent = summary.total;
+        }
+        
+        function openModal(isEdit = false) {
+            const modal = document.getElementById('punchlistModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const statusGroup = document.getElementById('statusGroup');
+            const deleteBtn = document.getElementById('modalDelete');
+            
+            if (isEdit) {
+                modalTitle.textContent = 'Editar observación';
+                statusGroup.style.display = 'block';
+                if (deleteBtn) deleteBtn.style.display = 'block';
+            } else {
+                modalTitle.textContent = 'Nueva observación';
+                statusGroup.style.display = 'none';
+                if (deleteBtn) deleteBtn.style.display = 'none';
+                document.getElementById('modalStatus').value = 'pending';
+            }
+            
+            modal.style.display = 'flex';
+        }
+        
+        function closeModal() {
+            document.getElementById('punchlistModal').style.display = 'none';
+            editingId = null;
+            clearModalForm();
+        }
+        
+        function clearModalForm() {
+            document.getElementById('modalCategory').value = 'electrical';
+            document.getElementById('modalText').value = '';
+            document.getElementById('modalPriority').value = 'medium';
+            document.getElementById('modalAssigned').value = '';
+            document.getElementById('modalDueDate').value = '';
+            document.getElementById('modalStatus').value = 'pending';
+        }
+        
+        async function editItem(id) {
+            const item = currentItems.find(i => i.id === id);
+            if (!item) return;
+            
+            editingId = id;
+            document.getElementById('modalCategory').value = item.category;
+            document.getElementById('modalText').value = item.text;
+            document.getElementById('modalPriority').value = item.priority;
+            document.getElementById('modalAssigned').value = item.assigned || '';
+            document.getElementById('modalDueDate').value = item.dueDate || '';
+            document.getElementById('modalStatus').value = item.status || 'pending';
+            
+            openModal(true);
+        }
+        
+        async function deleteItem(id) {
+            if (confirm('¿Eliminar esta observación?')) {
+                await deletePunchlistItem(id);
+                await loadPunchlist();
+            }
+        }
+        
+        async function saveItem() {
+            const category = document.getElementById('modalCategory').value;
+            const text = document.getElementById('modalText').value.trim();
+            const priority = document.getElementById('modalPriority').value;
+            const assigned = document.getElementById('modalAssigned').value;
+            const dueDate = document.getElementById('modalDueDate').value;
+            const status = document.getElementById('modalStatus').value;
+            
+            if (!text) {
+                alert('La descripción es obligatoria');
+                return;
+            }
+            
+            if (editingId) {
+                await updatePunchlistItem(editingId, {
+                    category,
+                    text,
+                    priority,
+                    assigned,
+                    dueDate,
+                    status
+                });
+            } else {
+                await addPunchlistItem({
+                    category,
+                    text,
+                    priority,
+                    assigned,
+                    dueDate,
+                    status: 'pending'
+                });
+            }
+            
+            closeModal();
+            await loadPunchlist();
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-MX');
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        
+        // Event listeners
+        document.getElementById('addPunchlistBtn')?.addEventListener('click', () => {
+            editingId = null;
+            clearModalForm();
+            openModal(false);
+        });
+        
+        document.getElementById('modalCancel')?.addEventListener('click', closeModal);
+        document.getElementById('modalSave')?.addEventListener('click', saveItem);
+        document.getElementById('modalDelete')?.addEventListener('click', async () => {
+            if (editingId && confirm('¿Eliminar permanentemente esta observación?')) {
+                await deletePunchlistItem(editingId);
+                closeModal();
+                await loadPunchlist();
+            }
+        });
+        
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', closeModal);
+        });
+        
+        document.getElementById('filterPriority')?.addEventListener('change', applyFilters);
+        document.getElementById('filterStatus')?.addEventListener('change', applyFilters);
+        document.getElementById('filterCategory')?.addEventListener('change', applyFilters);
+        
+        // Cerrar modal al hacer clic fuera
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('punchlistModal');
+            if (e.target === modal) closeModal();
+        });
+        
+        initTheme();
+        initSidebar();
+        loadPunchlist();
+    </script>
+    
+    <style>
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .modal-content {
+            background-color: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+        }
+        
+        .modal-body {
+            padding: var(--spacing-lg);
+        }
+        
+        .modal-footer {
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--spacing-sm);
+        }
+        
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: var(--spacing-sm);
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+        
+        .filters-bar {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+        
+        .filter-select {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+        }
+        
+        .punchlist-item {
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            border-left: 4px solid;
+        }
+        
+        .punchlist-item.priority-high { border-left-color: #ef4444; }
+        .punchlist-item.priority-medium { border-left-color: #f59e0b; }
+        .punchlist-item.priority-low { border-left-color: #10b981; }
+        
+        .punchlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-sm);
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+        
+        .punchlist-category {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+        
+        .category-badge, .priority-badge, .status-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        
+        .category-badge.electrical { background-color: #3b82f6; color: white; }
+        .category-badge.instrumentation { background-color: #8b5cf6; color: white; }
+        .priority-badge.high { background-color: #ef4444; color: white; }
+        .priority-badge.medium { background-color: #f59e0b; color: white; }
+        .priority-badge.low { background-color: #10b981; color: white; }
+        .status-badge.pending { background-color: #ef4444; color: white; }
+        .status-badge.in-progress { background-color: #f59e0b; color: white; }
+        .status-badge.resolved { background-color: #10b981; color: white; }
+        
+        .punchlist-text {
+            margin-bottom: var(--spacing-sm);
+            line-height: 1.4;
+        }
+        
+        .punchlist-meta {
+            display: flex;
+            gap: var(--spacing-md);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+        }
+        
+        .punchlist-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+        
+        .edit-btn, .delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px;
+            border-radius: var(--radius-sm);
+        }
+        
+        .edit-btn:hover { background-color: var(--bg-tertiary); }
+        .delete-btn:hover { background-color: var(--bg-tertiary); }
+        
+        .btn-primary-small {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+    </style>
+</body>
+</html>

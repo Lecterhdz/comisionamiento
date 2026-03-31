@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>Comisionamiento PWA | Checklists Eléctricos e Instrumentación</title>
+    
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/checklist.css">
+    
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">Comisionamiento PWA</span>
+            </div>
+            <button class="sidebar-close" id="sidebarClose">✕</button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-item active">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="pages/checklist-electrical.html" class="nav-item">
+                <span class="nav-icon">⚡</span>
+                <span class="nav-text">Checklist Eléctrico</span>
+            </a>
+            <a href="pages/checklist-instrumentation.html" class="nav-item">
+                <span class="nav-icon">📟</span>
+                <span class="nav-text">Checklist Instrumentación</span>
+            </a>
+            <a href="pages/punchlist.html" class="nav-item">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Punchlist</span>
+                <span class="badge" id="punchlistBadge">0</span>
+            </a>
+            <a href="pages/reports.html" class="nav-item">
+                <span class="nav-icon">📄</span>
+                <span class="nav-text">Reportes</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <button id="themeToggle" class="theme-toggle-btn">
+                <span class="theme-icon-dark">🌙</span>
+                <span class="theme-icon-light">☀️</span>
+                <span class="theme-text">Modo oscuro</span>
+            </button>
+        </div>
+    </aside>
+    
+    <main class="main-content">
+        <header class="top-bar">
+            <button class="hamburger" id="hamburger">
+                <span></span><span></span><span></span>
+            </button>
+            <h1 class="page-title">Dashboard</h1>
+            <div class="top-bar-actions">
+                <button id="themeToggleMobile" class="mobile-theme-toggle">🌙</button>
+                <button id="syncBtn" class="sync-btn" aria-label="Sincronizar">🔄</button>
+            </div>
+        </header>
+        
+        <div class="content-container">
+            <!-- Tarjetas de progreso circulares -->
+            <div class="progress-cards">
+                <div class="progress-card">
+                    <h3>Checklist Eléctrico</h3>
+                    <div class="circular-progress" id="electricalProgress" data-progress="0">
+                        <svg viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" class="progress-bg"/>
+                            <circle cx="50" cy="50" r="45" class="progress-fill"/>
+                        </svg>
+                        <div class="progress-value">
+                            <span id="electricalPercent">0</span>%
+                        </div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>Completados: <strong id="electricalCompleted">0</strong>/<span id="electricalTotal">0</span></span>
+                    </div>
+                    <a href="pages/checklist-electrical.html" class="btn-secondary">Continuar</a>
+                </div>
+                
+                <div class="progress-card">
+                    <h3>Checklist Instrumentación</h3>
+                    <div class="circular-progress" id="instrumentProgress" data-progress="0">
+                        <svg viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" class="progress-bg"/>
+                            <circle cx="50" cy="50" r="45" class="progress-fill"/>
+                        </svg>
+                        <div class="progress-value">
+                            <span id="instrumentPercent">0</span>%
+                        </div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>Completados: <strong id="instrumentCompleted">0</strong>/<span id="instrumentTotal">0</span></span>
+                    </div>
+                    <a href="pages/checklist-instrumentation.html" class="btn-secondary">Continuar</a>
+                </div>
+                
+                <div class="progress-card punchlist-card">
+                    <h3>Punchlist</h3>
+                    <div class="punchlist-summary">
+                        <div class="priority-stats">
+                            <div class="priority-item high">
+                                <span class="priority-dot"></span>
+                                <span>Alta:</span>
+                                <strong id="highCount">0</strong>
+                            </div>
+                            <div class="priority-item medium">
+                                <span class="priority-dot"></span>
+                                <span>Media:</span>
+                                <strong id="mediumCount">0</strong>
+                            </div>
+                            <div class="priority-item low">
+                                <span class="priority-dot"></span>
+                                <span>Baja:</span>
+                                <strong id="lowCount">0</strong>
+                            </div>
+                        </div>
+                        <div class="total-pendings">
+                            <span>Total pendientes:</span>
+                            <strong id="totalPendings">0</strong>
+                        </div>
+                    </div>
+                    <a href="pages/punchlist.html" class="btn-secondary">Ver punchlist</a>
+                </div>
+            </div>
+            
+            <!-- Últimas observaciones -->
+            <div class="recent-observations">
+                <h2>Últimas observaciones</h2>
+                <div class="observations-list" id="recentObservations">
+                    <p class="empty-message">No hay observaciones recientes</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script type="module">
+        import { initTheme } from './js/core/theme.js';
+        import { initSidebar } from './js/components/sidebar.js';
+        import { registerSW } from './js/core/sw-register.js';
+        import { initStorage, getChecklistProgress, getPunchlistSummary, getRecentObservations } from './js/core/storage.js';
+        import { updateCircularProgress } from './js/components/circular-progress.js';
+        
+        async function loadDashboard() {
+            await initStorage();
+            
+            // Cargar progreso de checklists
+            const electricalProgress = await getChecklistProgress('electrical');
+            const instrumentProgress = await getChecklistProgress('instrumentation');
+            
+            updateCircularProgress('electricalProgress', electricalProgress.percent);
+            document.getElementById('electricalPercent').textContent = electricalProgress.percent;
+            document.getElementById('electricalCompleted').textContent = electricalProgress.completed;
+            document.getElementById('electricalTotal').textContent = electricalProgress.total;
+            
+            updateCircularProgress('instrumentProgress', instrumentProgress.percent);
+            document.getElementById('instrumentPercent').textContent = instrumentProgress.percent;
+            document.getElementById('instrumentCompleted').textContent = instrumentProgress.completed;
+            document.getElementById('instrumentTotal').textContent = instrumentProgress.total;
+            
+            // Cargar resumen de punchlist
+            const summary = await getPunchlistSummary();
+            document.getElementById('highCount').textContent = summary.high;
+            document.getElementById('mediumCount').textContent = summary.medium;
+            document.getElementById('lowCount').textContent = summary.low;
+            document.getElementById('totalPendings').textContent = summary.total;
+            document.getElementById('punchlistBadge').textContent = summary.total;
+            
+            // Cargar observaciones recientes
+            const observations = await getRecentObservations(5);
+            const container = document.getElementById('recentObservations');
+            if (observations.length === 0) {
+                container.innerHTML = '<p class="empty-message">No hay observaciones recientes</p>';
+            } else {
+                container.innerHTML = observations.map(obs => `
+                    <div class="observation-item priority-${obs.priority}">
+                        <span class="observation-category">${obs.category}</span>
+                        <span class="observation-text">${obs.text.substring(0, 80)}${obs.text.length > 80 ? '...' : ''}</span>
+                        <span class="observation-status ${obs.status}">${obs.status === 'pending' ? 'Pendiente' : obs.status === 'in-progress' ? 'En Proceso' : 'Resuelto'}</span>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        initTheme();
+        initSidebar();
+        registerSW();
+        loadDashboard();
+        
+        // Sincronización manual
+        document.getElementById('syncBtn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('syncBtn');
+            btn.classList.add('syncing');
+            await loadDashboard();
+            setTimeout(() => btn.classList.remove('syncing'), 500);
+        });
+    </script>
+</body>
+</html>
