@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Dashboard Ejecutivo - Comisionamiento PWA</title>
+    
+    <!-- CSS Core -->
+    <link rel="stylesheet" href="/comisionamiento/css/variables.css">
+    <link rel="stylesheet" href="/comisionamiento/css/reset.css">
+    <link rel="stylesheet" href="/comisionamiento/css/utilities.css">
+    
+    <!-- CSS Layout -->
+    <link rel="stylesheet" href="/comisionamiento/css/grid.css">
+    <link rel="stylesheet" href="/comisionamiento/css/sidebar.css">
+    <link rel="stylesheet" href="/comisionamiento/css/header.css">
+    
+    <!-- CSS Components -->
+    <link rel="stylesheet" href="/comisionamiento/css/buttons.css">
+    <link rel="stylesheet" href="/comisionamiento/css/cards.css">
+    <link rel="stylesheet" href="/comisionamiento/css/forms.css">
+    <link rel="stylesheet" href="/comisionamiento/css/modals.css">
+    <link rel="stylesheet" href="/comisionamiento/css/animations.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        .chart-container { position: relative; height: 300px; width: 100%; }
+        .stat-card { text-align: center; padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border-color); }
+        .stat-value { font-size: 2.5rem; font-weight: 700; color: var(--primary-500); }
+        [data-theme="dark"] .stat-value { color: var(--accent-neon); }
+        .contractor-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border-color); }
+        .contractor-progress { width: 200px; }
+        .progress-small { height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; }
+        .progress-small-fill { height: 100%; background: var(--primary-500); border-radius: 3px; transition: width 0.3s; }
+        [data-theme="dark"] .progress-small-fill { background: var(--accent-neon); }
+        .file-upload-area { border: 2px dashed var(--border-color); border-radius: var(--radius-lg); padding: 2rem; text-align: center; cursor: pointer; transition: all var(--transition-fast); }
+        .file-upload-area:hover { border-color: var(--primary-500); background: var(--bg-secondary); }
+        [data-theme="dark"] .file-upload-area:hover { border-color: var(--accent-neon); }
+    </style>
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/comisionamiento/index.html" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">Comisiona</span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle" aria-label="Colapsar menú">
+                <span class="toggle-icon">◀</span>
+            </button>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Cerrar menú">✕</button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="/comisionamiento/index.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="/comisionamiento/pages/checklist-electrical.html" class="nav-item">
+                <span class="nav-icon">⚡</span>
+                <span class="nav-text">Checklist Eléctrico</span>
+            </a>
+            <a href="/comisionamiento/pages/checklist-instrumentation.html" class="nav-item">
+                <span class="nav-icon">📟</span>
+                <span class="nav-text">Instrumentación</span>
+            </a>
+            <a href="/comisionamiento/pages/punchlist.html" class="nav-item">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Punchlist</span>
+                <span class="badge" id="punchlistBadge">0</span>
+            </a>
+            <a href="/comisionamiento/pages/reports.html" class="nav-item">
+                <span class="nav-icon">📄</span>
+                <span class="nav-text">Reportes</span>
+            </a>
+            <a href="/comisionamiento/pages/executive-dashboard.html" class="nav-item active">
+                <span class="nav-icon">📈</span>
+                <span class="nav-text">Ejecutivo</span>
+            </a>
+            <a href="/comisionamiento/pages/subcontractor.html" class="nav-item">
+                <span class="nav-icon">👥</span>
+                <span class="nav-text">Subcontratistas</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <button id="themeToggle" class="theme-toggle-btn">
+                <span class="theme-icon-dark">🌙</span>
+                <span class="theme-icon-light">☀️</span>
+                <span class="theme-text">Modo oscuro</span>
+            </button>
+        </div>
+    </aside>
+    
+    <main class="main-content">
+        <header class="top-bar">
+            <button class="hamburger" id="hamburger" aria-label="Abrir menú">
+                <span></span><span></span><span></span>
+            </button>
+            <h1 class="page-title">Dashboard Ejecutivo</h1>
+            <div class="top-bar-actions">
+                <button id="themeToggleMobile" class="mobile-theme-toggle">🌙</button>
+                <button id="exportReportBtn" class="btn-primary btn-sm">📄 Exportar Consolidado</button>
+            </div>
+        </header>
+        
+        <div class="content-container" id="reportContent">
+            <!-- Importar reportes de subcontratistas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>📥 Importar reporte de subcontratista</h3>
+                </div>
+                <div class="card-body">
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <div style="font-size: 3rem;">📁</div>
+                        <p>Arrastre o haga clic para seleccionar archivo JSON</p>
+                        <p class="text-sm text-muted">Archivos generados por subcontratistas desde el portal</p>
+                        <input type="file" id="fileInput" accept=".json" style="display: none;">
+                    </div>
+                    <div id="importStatus" class="mt-3" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <!-- Tarjetas de resumen -->
+            <div class="grid grid-cols-4 mb-4">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalContractors">0</div>
+                    <div class="stat-label">Subcontratistas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalElectrical">0</div>
+                    <div class="stat-label">Items Eléctricos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalInstrumentation">0</div>
+                    <div class="stat-label">Items Instrumentación</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalProgress">0%</div>
+                    <div class="stat-label">Progreso General</div>
+                </div>
+            </div>
+            
+            <!-- Gráficas principales -->
+            <div class="grid grid-cols-2 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📊 Progreso por Disciplina</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="disciplineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🎯 Progreso General</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="progressDonutChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Subcontratistas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>👥 Progreso por Subcontratista</h3>
+                    <div class="btn-group">
+                        <button id="addContractorBtn" class="btn-primary btn-sm">+ Nuevo</button>
+                        <button id="clearReportsBtn" class="btn-danger btn-sm" style="background:#ef4444;">🗑️ Limpiar todo</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="contractorsList" class="contractors-list"></div>
+                </div>
+            </div>
+            
+            <!-- Punchlist por prioridad -->
+            <div class="grid grid-cols-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>⚠️ Punchlist por Prioridad</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 250px;">
+                            <canvas id="punchlistChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📋 Últimas Observaciones</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentObservationsList" class="observations-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Modal para nuevo subcontratista -->
+    <div id="contractorModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Nuevo Subcontratista</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre del contratista</label>
+                    <input type="text" id="newContractorName" class="form-input" placeholder="Ej: Empresa Eléctrica SA">
+                </div>
+                <div class="form-group">
+                    <label>Disciplina</label>
+                    <select id="newContractorDiscipline" class="form-select">
+                        <option value="electrical">⚡ Eléctrico</option>
+                        <option value="instrumentation">📟 Instrumentación</option>
+                        <option value="both">🔧 Ambas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Persona de contacto</label>
+                    <input type="text" id="newContractorContact" class="form-input" placeholder="Nombre del responsable">
+                </div>
+                <div class="form-group">
+                    <label>Email de contacto</label>
+                    <input type="email" id="newContractorEmail" class="form-input" placeholder="correo@empresa.com">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="newContractorPhone" class="form-input" placeholder="55 1234 5678">
+                </div>
+                <div class="alert alert-info mt-3">
+                    <strong>📌 ID y Licencia generados automáticamente</strong>
+                    <p class="text-sm mt-1">Se generará un archivo JSON para que el subcontratista complete y devuelva.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelContractorBtn" class="btn-outline">Cancelar</button>
+                <button id="saveContractorBtn" class="btn-primary">Generar y Descargar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initTheme, themeManager } from '/comisionamiento/js/core/theme.js';
+        import { initSidebar } from '/comisionamiento/js/components/sidebar.js';
+        import { initStorage, getAllPunchlistItems, getPunchlistSummary } from '/comisionamiento/js/core/storage.js';
+        import { importExportService } from '/comisionamiento/js/services/import-export.js';
+        import { notifications } from '/comisionamiento/js/services/notifications.js';
+        import { logger } from '/comisionamiento/js/core/logger.js';
+        import { formatters } from '/comisionamiento/js/utils/format.js';
+        
+        const log = logger.setContext('ExecutiveDashboard');
+        
+        let charts = {};
+        
+        async function init() {
+            await initStorage();
+            await importExportService.init();
+            await loadData();
+        }
+        
+        async function loadData() {
+            const consolidated = importExportService.getConsolidatedProgress();
+            const reports = importExportService.getAccumulatedReports();
+            
+            // Actualizar tarjetas
+            document.getElementById('totalContractors').textContent = reports.length;
+            document.getElementById('totalElectrical').textContent = consolidated.electrical.total;
+            document.getElementById('totalInstrumentation').textContent = consolidated.instrumentation.total;
+            document.getElementById('totalProgress').textContent = `${consolidated.overall.percent}%`;
+            
+            // Actualizar lista de subcontratistas
+            updateContractorsList(reports);
+            
+            // Actualizar gráficas
+            updateCharts(consolidated, themeManager.isDark());
+            
+            // Cargar punchlist
+            const punchlistSummary = await getPunchlistSummary();
+            updatePunchlistChart(punchlistSummary, themeManager.isDark());
+            
+            // Cargar observaciones recientes
+            const observations = await getAllPunchlistItems();
+            updateRecentObservations(observations.slice(0, 5));
+            
+            // Actualizar badge
+            const badge = document.getElementById('punchlistBadge');
+            if (badge) badge.textContent = punchlistSummary.total;
+        }
+        
+        function updateContractorsList(reports) {
+            const container = document.getElementById('contractorsList');
+            if (!container) return;
+            
+            if (reports.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No hay reportes de subcontratistas importados</p>';
+                return;
+            }
+            
+            container.innerHTML = reports.map(r => {
+                const progress = r.progress?.overall?.percent || 0;
+                return `
+                    <div class="contractor-item">
+                        <div>
+                            <strong>${r.contractor.name}</strong>
+                            <div class="text-sm text-muted">
+                                ${r.contractor.discipline === 'electrical' ? '⚡ Eléctrico' : 
+                                  r.contractor.discipline === 'instrumentation' ? '📟 Instrumentación' : '🔧 Ambas'}
+                                ${r.contractor.licenseKey ? `<span class="text-xs ml-2">🔑 ${r.contractor.licenseKey}</span>` : ''}
+                            </div>
+                            <div class="text-xs text-muted mt-1">Último reporte: ${formatters.date(r.updatedAt || r.importedAt, 'short')}</div>
+                        </div>
+                        <div class="contractor-progress">
+                            <div class="flex-between text-sm mb-1">
+                                <span>Progreso</span>
+                                <span>${progress}%</span>
+                            </div>
+                            <div class="progress-small">
+                                <div class="progress-small-fill" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+                        <button class="btn-icon-sm delete-contractor" data-id="${r.contractor.id}" style="color: #ef4444;">🗑️</button>
+                    </div>
+                `;
+            }).join('');
+            
+            // Eventos eliminar
+            container.querySelectorAll('.delete-contractor').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
+                    if (confirm('¿Eliminar este subcontratista?')) {
+                        await importExportService.removeContractor(id);
+                        await loadData();
+                        notifications.success('Subcontratista eliminado');
+                    }
+                });
+            });
+        }
+        
+        function updateCharts(consolidated, isDark) {
+            // Gráfica de barras por disciplina
+            const ctx = document.getElementById('disciplineChart')?.getContext('2d');
+            if (ctx) {
+                if (charts.discipline) charts.discipline.destroy();
+                charts.discipline = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Eléctrico', 'Instrumentación'],
+                        datasets: [
+                            {
+                                label: 'Completados',
+                                data: [consolidated.electrical.completed, consolidated.instrumentation.completed],
+                                backgroundColor: '#10b981',
+                                borderRadius: 8
+                            },
+                            {
+                                label: 'Pendientes',
+                                data: [
+                                    consolidated.electrical.total - consolidated.electrical.completed,
+                                    consolidated.instrumentation.total - consolidated.instrumentation.completed
+                                ],
+                                backgroundColor: '#ef4444',
+                                borderRadius: 8
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAt
