@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Portal Subcontratista - Comisionamiento PWA</title>
+    <title>Portal Proveedor - Comisionamiento PWA</title>
     
     <link rel="stylesheet" href="/comisionamiento/css/variables.css">
     <link rel="stylesheet" href="/comisionamiento/css/reset.css">
@@ -11,10 +11,11 @@
     <link rel="stylesheet" href="/comisionamiento/css/buttons.css">
     <link rel="stylesheet" href="/comisionamiento/css/cards.css">
     <link rel="stylesheet" href="/comisionamiento/css/forms.css">
+    <link rel="stylesheet" href="/comisionamiento/css/modals.css">
     
     <style>
-        body { background: var(--bg-primary); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-        .subcontractor-container { max-width: 900px; width: 100%; }
+        body { background: var(--bg-primary); min-height: 100vh; padding: 2rem; }
+        .subcontractor-container { max-width: 1200px; margin: 0 auto; }
         .file-upload-area { border: 2px dashed var(--border-color); border-radius: var(--radius-lg); padding: 2rem; text-align: center; cursor: pointer; transition: all var(--transition-fast); margin-bottom: 1rem; }
         .file-upload-area:hover { border-color: var(--primary-500); background: var(--bg-secondary); }
         [data-theme="dark"] .file-upload-area:hover { border-color: var(--accent-neon); }
@@ -24,92 +25,169 @@
         .progress-bar-container { height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; }
         .progress-bar-fill { height: 100%; background: var(--primary-500); transition: width 0.3s; }
         [data-theme="dark"] .progress-bar-fill { background: var(--accent-neon); }
-        .license-card { background: linear-gradient(135deg, var(--primary-50), var(--bg-secondary)); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; text-align: center; }
-        [data-theme="dark"] .license-card { background: linear-gradient(135deg, rgba(0,242,255,0.1), var(--bg-secondary)); }
-        .license-code { font-family: monospace; font-size: 1.2rem; background: var(--bg-primary); padding: 0.5rem 1rem; border-radius: var(--radius-md); display: inline-block; border: 1px solid var(--border-color); }
+        .form-section { background: var(--bg-secondary); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid var(--border-color); }
+        .prorroga-option { background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 1rem; margin-top: 1rem; border-radius: var(--radius-md); }
     </style>
 </head>
 <body>
     <div class="subcontractor-container">
+        <!-- Header -->
         <div class="text-center mb-4">
-            <h1 class="text-2xl font-bold">📋 Portal Subcontratista</h1>
-            <p class="text-muted">Complete su checklist y devuelva el archivo al contratista general</p>
+            <h1 class="text-2xl font-bold">📋 Portal Proveedor (Instalador)</h1>
+            <p class="text-muted">Genere su reporte de avance y envíelo al contratista general</p>
         </div>
         
-        <!-- Tarjeta de identificación -->
-        <div class="license-card">
-            <h3>🔐 Identificación del Contratista</h3>
+        <!-- Paso 1: Datos del Proveedor -->
+        <div class="form-section">
+            <h3>🔐 1. Datos del Proveedor</h3>
             <div class="grid grid-cols-2 gap-3 mt-3">
                 <div class="form-group">
-                    <label>ID del Contratista</label>
-                    <input type="text" id="contractorId" class="form-input" placeholder="Ej: CTR-XXXXXX-XXXX">
+                    <label>ID del Proveedor *</label>
+                    <input type="text" id="proveedorId" class="form-input" placeholder="Ej: CTR-XXXXXX-XXXX">
                 </div>
                 <div class="form-group">
-                    <label>Clave de Licencia</label>
-                    <input type="text" id="licenseKey" class="form-input" placeholder="COM-XXXXXX-XXXXXX">
+                    <label>Clave de Licencia *</label>
+                    <input type="text" id="licenciaKey" class="form-input" placeholder="COM-XXXXXX-XXXXXX">
                 </div>
                 <div class="form-group">
-                    <label>Nombre del Contratista</label>
-                    <input type="text" id="contractorName" class="form-input" placeholder="Nombre de la empresa">
+                    <label>Nombre de la Empresa *</label>
+                    <input type="text" id="proveedorNombre" class="form-input" placeholder="Nombre de la empresa">
                 </div>
                 <div class="form-group">
-                    <label>Disciplina</label>
-                    <select id="discipline" class="form-select">
-                        <option value="electrical">⚡ Eléctrico</option>
-                        <option value="instrumentation">📟 Instrumentación</option>
-                        <option value="both">🔧 Ambas</option>
+                    <label>Persona de Contacto</label>
+                    <input type="text" id="proveedorContacto" class="form-input" placeholder="Nombre del responsable">
+                </div>
+                <div class="form-group">
+                    <label>Email de Contacto</label>
+                    <input type="email" id="proveedorEmail" class="form-input" placeholder="correo@empresa.com">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="proveedorTelefono" class="form-input" placeholder="55 1234 5678">
+                </div>
+            </div>
+            <button id="generarIdBtn" class="btn-outline mt-2">🎫 Generar ID y Licencia</button>
+        </div>
+        
+        <!-- Paso 2: Datos del Proyecto y Etapa -->
+        <div class="form-section">
+            <h3>📁 2. Datos del Proyecto</h3>
+            <div class="grid grid-cols-2 gap-3 mt-3">
+                <div class="form-group">
+                    <label>ID del Proyecto *</label>
+                    <input type="text" id="proyectoId" class="form-input" placeholder="PROJ-001">
+                </div>
+                <div class="form-group">
+                    <label>Nombre del Proyecto *</label>
+                    <input type="text" id="proyectoNombre" class="form-input" placeholder="Nombre del proyecto">
+                </div>
+                <div class="form-group">
+                    <label>Cliente *</label>
+                    <input type="text" id="proyectoCliente" class="form-input" placeholder="Nombre del cliente">
+                </div>
+                <div class="form-group">
+                    <label>Ubicación</label>
+                    <input type="text" id="proyectoUbicacion" class="form-input" placeholder="Ciudad, Estado">
+                </div>
+            </div>
+            
+            <h3 class="mt-4">⏳ 3. Etapa del Proyecto</h3>
+            <div class="grid grid-cols-2 gap-3 mt-3">
+                <div class="form-group">
+                    <label>Etapa *</label>
+                    <select id="etapaId" class="form-select">
+                        <option value="pre-comisionamiento">Pre-comisionamiento</option>
+                        <option value="comisionamiento-frio">Comisionamiento en Frío</option>
+                        <option value="comisionamiento-caliente">Comisionamiento en Caliente</option>
+                        <option value="pruebas-funcionales">Pruebas Funcionales</option>
+                        <option value="aceptacion">Aceptación y Entrega</option>
                     </select>
                 </div>
-            </div>
-            <button id="generateLicenseBtn" class="btn-outline mt-3">🎫 Generar ID y Licencia</button>
-        </div>
-        
-        <!-- Sección de Importación -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3>📂 1. Importar archivo del contratista general</h3>
-            </div>
-            <div class="card-body">
-                <div class="file-upload-area" id="fileUploadArea">
-                    <div style="font-size: 3rem;">📁</div>
-                    <p>Arrastre o haga clic para seleccionar archivo JSON</p>
-                    <p class="text-sm text-muted">Archivo generado por el contratista general</p>
-                    <input type="file" id="fileInput" accept=".json" style="display: none;">
+                <div class="form-group">
+                    <label>Fecha Inicio Programada</label>
+                    <input type="date" id="etapaFechaInicio" class="form-input">
                 </div>
-                <div id="importStatus" class="mt-3" style="display: none;"></div>
-            </div>
-        </div>
-        
-        <!-- Sección de Checklist -->
-        <div id="checklistSection" style="display: none;">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3>✅ 2. Completar Checklist</h3>
+                <div class="form-group">
+                    <label>Fecha Fin Programada</label>
+                    <input type="date" id="etapaFechaFinProgramada" class="form-input">
                 </div>
-                <div class="card-body">
-                    <div id="checklistContainer"></div>
-                    <div class="mt-4">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="checklistProgress" style="width: 0%"></div>
-                        </div>
-                        <div class="text-center mt-2">
-                            <span id="progressText">0% completado</span>
-                        </div>
-                    </div>
+            </div>
+            
+            <!-- Opción de Prórroga -->
+            <div class="prorroga-option mt-3">
+                <label class="flex align-center gap-2">
+                    <input type="checkbox" id="isProrrogaCheckbox">
+                    <span>📅 Marcar como PRÓRROGA (trabajo fuera de tiempo planeado)</span>
+                </label>
+                <div id="prorrogaMotivoDiv" style="display: none;" class="mt-2">
+                    <label>Motivo de la prórroga *</label>
+                    <textarea id="prorrogaMotivo" rows="2" class="form-textarea" placeholder="Ej: Retraso en entrega de materiales críticos, condiciones climáticas, disponibilidad de personal..."></textarea>
                 </div>
             </div>
         </div>
         
-        <!-- Sección de Exportación -->
-        <div id="exportSection" style="display: none;">
-            <div class="card">
-                <div class="card-header">
-                    <h3>📤 3. Exportar y devolver</h3>
+        <!-- Paso 3: Sistema/Equipo -->
+        <div class="form-section">
+            <h3>🔧 4. Sistema / Equipo</h3>
+            <div class="grid grid-cols-2 gap-3 mt-3">
+                <div class="form-group">
+                    <label>Tipo de Sistema *</label>
+                    <select id="sistemaTipo" class="form-select">
+                        <option value="electrical">⚡ Eléctrico</option>
+                        <option value="instrumentation">📟 Instrumentación</option>
+                    </select>
                 </div>
-                <div class="card-body">
-                    <p>Complete el checklist y exporte el archivo para devolverlo al contratista general.</p>
-                    <button id="exportJSONBtn" class="btn-primary w-100 mt-3">📄 Exportar JSON para devolver</button>
+                <div class="form-group">
+                    <label>Sistema / Equipo *</label>
+                    <select id="sistemaId" class="form-select">
+                        <optgroup label="Sistemas Eléctricos">
+                            <option value="tablero-media-tension">Tablero de Media Tensión</option>
+                            <option value="tablero-baja-tension">Tablero de Baja Tensión</option>
+                            <option value="motor-electrico">Motor Eléctrico</option>
+                            <option value="vfd-variador">Variador de Frecuencia (VFD)</option>
+                        </optgroup>
+                        <optgroup label="Sistemas de Instrumentación">
+                            <option value="transmisor-presion">Transmisor de Presión</option>
+                            <option value="transmisor-temperatura">Transmisor de Temperatura</option>
+                            <option value="valvula-control">Válvula de Control</option>
+                            <option value="plc-dcs">PLC/DCS</option>
+                        </optgroup>
+                    </select>
                 </div>
+                <div class="form-group">
+                    <label>Identificador del Equipo</label>
+                    <input type="text" id="sistemaIdentificador" class="form-input" placeholder="Ej: TB-01, MTR-101, VFD-002">
+                </div>
+                <div class="form-group">
+                    <label>Ubicación del Equipo</label>
+                    <input type="text" id="sistemaUbicacion" class="form-input" placeholder="Sala eléctrica, Área de proceso, etc.">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Paso 4: Checklist (se carga dinámicamente) -->
+        <div id="checklistSection" class="form-section">
+            <h3>✅ 5. Checklist de Comisionamiento</h3>
+            <div id="checklistContainer" class="mt-3"></div>
+            <div class="mt-4">
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="checklistProgress" style="width: 0%"></div>
+                </div>
+                <div class="text-center mt-2">
+                    <span id="progressText">0% completado</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Paso 5: Exportar -->
+        <div class="form-section">
+            <h3>📤 6. Exportar Reporte</h3>
+            <p class="text-muted">Genere el archivo JSON para enviar al contratista general</p>
+            <div class="btn-group mt-3">
+                <button id="exportarReporteBtn" class="btn-primary">📄 Exportar Reporte JSON</button>
+            </div>
+            <div id="exportInfo" class="mt-3" style="display: none;">
+                <div class="alert alert-success">✅ Reporte generado. Envíe este archivo al contratista general.</div>
             </div>
         </div>
         
@@ -120,138 +198,76 @@
     
     <script type="module">
         import { initTheme } from '/comisionamiento/js/core/theme.js';
-        import { importExportService } from '/comisionamiento/js/services/import-export.js';
+        import { getChecklistItemsBySystem, getAvailableSystems } from '/comisionamiento/js/features/checklist/items-data.js';
         import { notifications } from '/comisionamiento/js/services/notifications.js';
         
-        let currentData = null;
-        let currentItems = [];
+        let currentChecklistItems = [];
         
         // Generar ID y Licencia
-        document.getElementById('generateLicenseBtn')?.addEventListener('click', () => {
-            const name = document.getElementById('contractorName').value || 'Contratista';
-            const id = importExportService.generateContractorId();
-            const license = importExportService.generateLicenseKey('GENERAL', id);
+        document.getElementById('generarIdBtn')?.addEventListener('click', () => {
+            const nombre = document.getElementById('proveedorNombre').value || 'Proveedor';
+            const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
             
-            document.getElementById('contractorId').value = id;
-            document.getElementById('licenseKey').value = license;
+            document.getElementById('proveedorId').value = id;
+            document.getElementById('licenciaKey').value = licencia;
             
             notifications.success('ID y Licencia generados');
         });
         
-        // File upload
-        const fileUploadArea = document.getElementById('fileUploadArea');
-        const fileInput = document.getElementById('fileInput');
+        // Prórroga checkbox
+        const isProrrogaCheckbox = document.getElementById('isProrrogaCheckbox');
+        const prorrogaMotivoDiv = document.getElementById('prorrogaMotivoDiv');
         
-        fileUploadArea.addEventListener('click', () => fileInput.click());
-        
-        fileUploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileUploadArea.style.borderColor = 'var(--primary-500)';
+        isProrrogaCheckbox?.addEventListener('change', (e) => {
+            prorrogaMotivoDiv.style.display = e.target.checked ? 'block' : 'none';
         });
         
-        fileUploadArea.addEventListener('dragleave', () => {
-            fileUploadArea.style.borderColor = 'var(--border-color)';
-        });
+        // Cambio de sistema - cargar checklist
+        const sistemaSelect = document.getElementById('sistemaId');
+        const sistemaTipo = document.getElementById('sistemaTipo');
         
-        fileUploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            fileUploadArea.style.borderColor = 'var(--border-color)';
-            const file = e.dataTransfer.files[0];
-            if (file) processFile(file);
-        });
-        
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files[0]) processFile(e.target.files[0]);
-        });
-        
-        async function processFile(file) {
-            const statusDiv = document.getElementById('importStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = '<div class="alert alert-info">⏳ Procesando archivo...</div>';
+        function cargarChecklist() {
+            const systemId = sistemaSelect.value;
+            const systemData = getChecklistItemsBySystem(systemId);
             
-            try {
-                const content = await file.text();
-                const data = JSON.parse(content);
-                
-                if (!data.contractor) {
-                    throw new Error('Archivo inválido: no contiene datos de contratista');
-                }
-                
-                currentData = data;
-                
-                // Cargar datos del contratista
-                document.getElementById('contractorId').value = data.contractor.id || '';
-                document.getElementById('licenseKey').value = data.contractor.licenseKey || '';
-                document.getElementById('contractorName').value = data.contractor.name || '';
-                document.getElementById('discipline').value = data.contractor.discipline || 'both';
-                
-                // Cargar checklist
-                loadChecklist(data.checklist);
-                
-                statusDiv.innerHTML = '<div class="alert alert-success">✅ Archivo importado correctamente</div>';
-                setTimeout(() => statusDiv.style.display = 'none', 3000);
-                
-                document.getElementById('checklistSection').style.display = 'block';
-                document.getElementById('exportSection').style.display = 'block';
-                
-                notifications.success('Archivo importado correctamente');
-                
-            } catch (error) {
-                statusDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${error.message}</div>`;
-                notifications.error(error.message);
+            if (!systemData) {
+                document.getElementById('checklistContainer').innerHTML = '<p class="text-center text-muted">Seleccione un sistema/equipo</p>';
+                return;
             }
+            
+            currentChecklistItems = systemData.items.map(item => ({
+                ...item,
+                completed: false,
+                notes: ''
+            }));
+            
+            renderChecklist();
         }
         
-        function loadChecklist(checklist) {
+        function renderChecklist() {
             const container = document.getElementById('checklistContainer');
             if (!container) return;
             
-            currentItems = [];
-            let html = '';
+            let html = `<h4 class="mb-3">📋 ${getSystemName(sistemaSelect.value)}</h4>`;
             
-            // Eléctrico
-            if (checklist.electrical && checklist.electrical.length > 0) {
-                html += `<h4 class="mt-3 mb-2">⚡ Checklist Eléctrico</h4>`;
-                checklist.electrical.forEach(item => {
-                    currentItems.push({ ...item, category: 'electrical' });
-                    html += `
-                        <div class="checklist-item">
-                            <input type="checkbox" data-id="${item.id}" data-category="electrical" ${item.completed ? 'checked' : ''} style="margin-top: 0.25rem;">
-                            <div style="flex: 1;">
-                                <div>
-                                    <strong>${escapeHtml(item.item)}</strong>
-                                    ${item.critical ? '<span class="badge-critical">CRÍTICO</span>' : ''}
-                                </div>
-                                <div class="text-sm text-muted">Norma: ${escapeHtml(item.norm)}</div>
-                                <textarea data-id="${item.id}" class="form-textarea mt-2" placeholder="Notas..." rows="2" style="font-size: 0.8rem;">${escapeHtml(item.notes || '')}</textarea>
+            currentChecklistItems.forEach(item => {
+                html += `
+                    <div class="checklist-item">
+                        <input type="checkbox" data-id="${item.id}" ${item.completed ? 'checked' : ''} style="margin-top: 0.25rem;">
+                        <div style="flex: 1;">
+                            <div>
+                                <strong>${escapeHtml(item.item)}</strong>
+                                ${item.critical ? '<span class="badge-critical">CRÍTICO</span>' : ''}
                             </div>
+                            <div class="text-sm text-muted">Norma: ${escapeHtml(item.norm)}</div>
+                            <textarea data-id="${item.id}" class="form-textarea mt-2" placeholder="Notas / observaciones..." rows="2" style="font-size: 0.8rem;">${escapeHtml(item.notes || '')}</textarea>
                         </div>
-                    `;
-                });
-            }
+                    </div>
+                `;
+            });
             
-            // Instrumentación
-            if (checklist.instrumentation && checklist.instrumentation.length > 0) {
-                html += `<h4 class="mt-4 mb-2">📟 Checklist Instrumentación</h4>`;
-                checklist.instrumentation.forEach(item => {
-                    currentItems.push({ ...item, category: 'instrumentation' });
-                    html += `
-                        <div class="checklist-item">
-                            <input type="checkbox" data-id="${item.id}" data-category="instrumentation" ${item.completed ? 'checked' : ''} style="margin-top: 0.25rem;">
-                            <div style="flex: 1;">
-                                <div>
-                                    <strong>${escapeHtml(item.item)}</strong>
-                                    ${item.critical ? '<span class="badge-critical">CRÍTICO</span>' : ''}
-                                </div>
-                                <div class="text-sm text-muted">Norma: ${escapeHtml(item.norm)}</div>
-                                <textarea data-id="${item.id}" class="form-textarea mt-2" placeholder="Notas..." rows="2" style="font-size: 0.8rem;">${escapeHtml(item.notes || '')}</textarea>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            
-            container.innerHTML = html || '<p class="text-center text-muted">No hay items para completar</p>';
+            container.innerHTML = html;
             
             // Event listeners
             container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
@@ -261,7 +277,7 @@
                     const notesArea = container.querySelector(`textarea[data-id="${id}"]`);
                     const notes = notesArea?.value || '';
                     
-                    const item = currentItems.find(i => i.id === id);
+                    const item = currentChecklistItems.find(i => i.id === id);
                     if (item) {
                         item.completed = completed;
                         item.notes = notes;
@@ -280,7 +296,7 @@
                         const completed = container.querySelector(`input[data-id="${id}"]`)?.checked || false;
                         const notes = e.target.value;
                         
-                        const item = currentItems.find(i => i.id === id);
+                        const item = currentChecklistItems.find(i => i.id === id);
                         if (item) {
                             item.completed = completed;
                             item.notes = notes;
@@ -293,8 +309,8 @@
         }
         
         function updateProgress() {
-            const total = currentItems.length;
-            const completed = currentItems.filter(i => i.completed).length;
+            const total = currentChecklistItems.length;
+            const completed = currentChecklistItems.filter(i => i.completed).length;
             const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
             
             const progressFill = document.getElementById('checklistProgress');
@@ -304,36 +320,111 @@
             if (progressText) progressText.textContent = `${percent}% completado (${completed}/${total})`;
         }
         
-        // Exportar JSON para devolver
-        document.getElementById('exportJSONBtn')?.addEventListener('click', async () => {
-            const exportData = {
+        function getSystemName(systemId) {
+            const systems = {
+                'tablero-media-tension': 'Tablero de Media Tensión',
+                'tablero-baja-tension': 'Tablero de Baja Tensión',
+                'motor-electrico': 'Motor Eléctrico',
+                'vfd-variador': 'Variador de Frecuencia (VFD)',
+                'transmisor-presion': 'Transmisor de Presión',
+                'transmisor-temperatura': 'Transmisor de Temperatura',
+                'valvula-control': 'Válvula de Control',
+                'plc-dcs': 'PLC/DCS'
+            };
+            return systems[systemId] || systemId;
+        }
+        
+        // Exportar reporte
+        document.getElementById('exportarReporteBtn')?.addEventListener('click', () => {
+            // Validar campos obligatorios
+            const proveedorId = document.getElementById('proveedorId').value.trim();
+            const licenciaKey = document.getElementById('licenciaKey').value.trim();
+            const proveedorNombre = document.getElementById('proveedorNombre').value.trim();
+            const proyectoId = document.getElementById('proyectoId').value.trim();
+            const proyectoNombre = document.getElementById('proyectoNombre').value.trim();
+            const proyectoCliente = document.getElementById('proyectoCliente').value.trim();
+            const etapaId = document.getElementById('etapaId').value;
+            
+            if (!proveedorId || !licenciaKey || !proveedorNombre || !proyectoId || !proyectoNombre || !proyectoCliente) {
+                notifications.warning('Complete todos los campos obligatorios (*)');
+                return;
+            }
+            
+            const isProrroga = isProrrogaCheckbox.checked;
+            const prorrogaMotivo = isProrroga ? document.getElementById('prorrogaMotivo').value.trim() : null;
+            
+            if (isProrroga && !prorrogaMotivo) {
+                notifications.warning('Ingrese el motivo de la prórroga');
+                return;
+            }
+            
+            // Calcular estadísticas
+            const totalItems = currentChecklistItems.length;
+            const completados = currentChecklistItems.filter(i => i.completed).length;
+            const criticosPendientes = currentChecklistItems.filter(i => i.critical && !i.completed).length;
+            
+            // Construir reporte
+            const reporte = {
                 metadata: {
-                    version: '1.0',
-                    exportedAt: new Date().toISOString(),
-                    generatedBy: 'Subcontratista'
+                    version: "2.0",
+                    reportId: `RPT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+                    reportType: isProrroga ? "prorrogado" : "progreso",
+                    generatedAt: new Date().toISOString(),
+                    isProrroga: isProrroga,
+                    prorrogaMotivo: prorrogaMotivo
                 },
-                contractor: {
-                    id: document.getElementById('contractorId').value,
-                    name: document.getElementById('contractorName').value,
-                    discipline: document.getElementById('discipline').value,
-                    licenseKey: document.getElementById('licenseKey').value
+                proyecto: {
+                    id: proyectoId,
+                    nombre: proyectoNombre,
+                    cliente: proyectoCliente,
+                    ubicacion: document.getElementById('proyectoUbicacion').value || ''
+                },
+                proveedor: {
+                    id: proveedorId,
+                    nombre: proveedorNombre,
+                    contacto: document.getElementById('proveedorContacto').value || '',
+                    email: document.getElementById('proveedorEmail').value || '',
+                    telefono: document.getElementById('proveedorTelefono').value || '',
+                    licencia: licenciaKey
+                },
+                etapa: {
+                    id: etapaId,
+                    nombre: document.getElementById('etapaId').options[document.getElementById('etapaId').selectedIndex].text,
+                    fechaInicio: document.getElementById('etapaFechaInicio').value || '',
+                    fechaFinProgramada: document.getElementById('etapaFechaFinProgramada').value || '',
+                    fechaFinReal: null
+                },
+                sistema: {
+                    id: sistemaSelect.value,
+                    nombre: getSystemName(sistemaSelect.value),
+                    tipo: document.getElementById('sistemaTipo').value,
+                    identificador: document.getElementById('sistemaIdentificador').value || '',
+                    ubicacion: document.getElementById('sistemaUbicacion').value || ''
                 },
                 checklist: {
-                    electrical: currentItems.filter(i => i.category === 'electrical'),
-                    instrumentation: currentItems.filter(i => i.category === 'instrumentation')
+                    [document.getElementById('sistemaTipo').value]: currentChecklistItems
+                },
+                estadisticas: {
+                    totalItems: totalItems,
+                    completados: completados,
+                    pendientes: totalItems - completados,
+                    porcentaje: totalItems > 0 ? Math.round((completados / totalItems) * 100) : 0,
+                    criticosPendientes: criticosPendientes
                 }
             };
             
-            const jsonStr = JSON.stringify(exportData, null, 2);
+            // Descargar JSON
+            const jsonStr = JSON.stringify(reporte, null, 2);
             const blob = new Blob([jsonStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `reporte-${document.getElementById('contractorName').value.replace(/\s/g, '-')}-${Date.now()}.json`;
+            a.download = `reporte-${proveedorNombre.replace(/\s/g, '-')}-${etapaId}-${sistemaSelect.value}-${Date.now()}.json`;
             a.click();
             URL.revokeObjectURL(url);
             
-            notifications.success('Archivo exportado. Envíelo al contratista general.');
+            document.getElementById('exportInfo').style.display = 'block';
+            notifications.success('Reporte exportado. Envíelo al contratista general.');
         });
         
         function escapeHtml(str) {
@@ -346,6 +437,35 @@
             });
         }
         
+        // Inicializar
+        sistemaSelect.addEventListener('change', cargarChecklist);
+        sistemaTipo.addEventListener('change', () => {
+            // Actualizar opciones del sistema según tipo
+            const tipo = sistemaTipo.value;
+            const electricalOptions = ['tablero-media-tension', 'tablero-baja-tension', 'motor-electrico', 'vfd-variador'];
+            const instrumentationOptions = ['transmisor-presion', 'transmisor-temperatura', 'valvula-control', 'plc-dcs'];
+            
+            const options = sistemaSelect.querySelectorAll('option');
+            options.forEach(opt => {
+                if (tipo === 'electrical') {
+                    opt.style.display = electricalOptions.includes(opt.value) || opt.value === '' ? '' : 'none';
+                } else {
+                    opt.style.display = instrumentationOptions.includes(opt.value) || opt.value === '' ? '' : 'none';
+                }
+            });
+            
+            // Seleccionar primera opción válida
+            for (let opt of options) {
+                if (opt.style.display !== 'none' && opt.value) {
+                    sistemaSelect.value = opt.value;
+                    break;
+                }
+            }
+            
+            cargarChecklist();
+        });
+        
+        cargarChecklist();
         initTheme();
     </script>
 </body>
