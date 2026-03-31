@@ -109,67 +109,7 @@
                 <button id="exportConsolidadoBtn" class="btn-primary btn-sm">📄 Exportar Consolidado</button>
             </div>
         </header>
-            <!-- Modal para gestionar proveedores -->
-            <div id="manageContractorsModal" class="modal" style="display: none;">
-                <div class="modal-content modal-lg">
-                    <div class="modal-header">
-                        <h3>👥 Gestionar Proveedores</h3>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <button id="newContractorBtn" class="btn-primary mb-3">+ Nuevo Proveedor</button>
-                        <div id="contractorsTable"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Modal para nuevo proveedor -->
-            <div id="newContractorModal" class="modal" style="display: none;">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>➕ Nuevo Proveedor</h3>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label>Nombre de la Empresa *</label>
-                            <input type="text" id="newContractorName" class="form-input" placeholder="Nombre del proveedor">
-                        </div>
-                        <div class="form-group">
-                            <label>Persona de Contacto</label>
-                            <input type="text" id="newContractorContact" class="form-input" placeholder="Nombre del responsable">
-                        </div>
-                        <div class="form-group">
-                            <label>Email de Contacto</label>
-                            <input type="email" id="newContractorEmail" class="form-input" placeholder="correo@empresa.com">
-                        </div>
-                        <div class="form-group">
-                            <label>Teléfono</label>
-                            <input type="tel" id="newContractorPhone" class="form-input" placeholder="55 1234 5678">
-                        </div>
-                        <div class="form-group">
-                            <label>Disciplina</label>
-                            <select id="newContractorDiscipline" class="form-select">
-                                <option value="electrical">⚡ Eléctrico</option>
-                                <option value="instrumentation">📟 Instrumentación</option>
-                                <option value="both">🔧 Ambas</option>
-                            </select>
-                        </div>
-                        <div class="alert alert-info">
-                            <strong>📌 Se generará automáticamente:</strong>
-                            <ul class="mt-2">
-                                <li>ID único del proveedor</li>
-                                <li>Clave de licencia</li>
-                                <li>Archivo JSON para que el proveedor importe</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button id="cancelNewContractorBtn" class="btn-outline">Cancelar</button>
-                        <button id="saveNewContractorBtn" class="btn-primary">Generar y Descargar</button>
-                    </div>
-                </div>
-            </div>           
+
         <div class="content-container" id="reportContent">
             <!-- Importar reportes de proveedores -->
             <div class="card mb-4">
@@ -262,7 +202,67 @@
             </div>
         </div>
     </main>
-    
+            <!-- Modal para gestionar proveedores -->
+            <div id="manageContractorsModal" class="modal" style="display: none;">
+                <div class="modal-content modal-lg">
+                    <div class="modal-header">
+                        <h3>👥 Gestionar Proveedores</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <button id="newContractorBtn" class="btn-primary mb-3">+ Nuevo Proveedor</button>
+                        <div id="contractorsTable"></div>
+                    </div>
+                </div>
+            </div>
+            
+    <!-- Modal para nuevo proveedor -->
+    <div id="newContractorModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Nuevo Proveedor</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre de la Empresa *</label>
+                    <input type="text" id="newContractorName" class="form-input" placeholder="Nombre del proveedor">
+                </div>
+                <div class="form-group">
+                    <label>Persona de Contacto</label>
+                    <input type="text" id="newContractorContact" class="form-input" placeholder="Nombre del responsable">
+                </div>
+                <div class="form-group">
+                    <label>Email de Contacto</label>
+                    <input type="email" id="newContractorEmail" class="form-input" placeholder="correo@empresa.com">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="newContractorPhone" class="form-input" placeholder="55 1234 5678">
+                </div>
+                <div class="form-group">
+                    <label>Disciplina</label>
+                    <select id="newContractorDiscipline" class="form-select">
+                        <option value="electrical">⚡ Eléctrico</option>
+                        <option value="instrumentation">📟 Instrumentación</option>
+                        <option value="both">🔧 Ambas</option>
+                    </select>
+                </div>
+                <div class="alert alert-info">
+                    <strong>📌 Se generará automáticamente:</strong>
+                    <ul class="mt-2">
+                        <li>ID único del proveedor</li>
+                        <li>Clave de licencia</li>
+                        <li>Archivo JSON para que el proveedor importe</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelNewContractorBtn" class="btn-outline">Cancelar</button>
+                <button id="saveNewContractorBtn" class="btn-primary">Generar y Descargar</button>
+            </div>
+        </div>
+    </div>               
     <script type="module">
         import { initTheme, themeManager } from '/comisionamiento/js/core/theme.js';
         import { initSidebar } from '/comisionamiento/js/components/sidebar.js';
@@ -615,7 +615,196 @@
             
             notifications.success('Reporte consolidado exportado');
         });
+        // ============================================
+        // GESTIÓN DE PROVEEDORES (NUEVO)
+        // ============================================
         
+        // Almacenamiento de proveedores en el cliente
+        let clientProveedores = [];
+        
+        async function loadClientProveedores() {
+            const saved = localStorage.getItem('client_proveedores');
+            if (saved) {
+                clientProveedores = JSON.parse(saved);
+            }
+            renderContractorsTable();
+        }
+        
+        function saveClientProveedores() {
+            localStorage.setItem('client_proveedores', JSON.stringify(clientProveedores));
+        }
+        
+        function renderContractorsTable() {
+            const container = document.getElementById('contractorsTable');
+            if (!container) return;
+            
+            if (clientProveedores.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No hay proveedores registrados</p>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Empresa</th>
+                            <th>ID</th>
+                            <th>Licencia</th>
+                            <th>Contacto</th>
+                            <th>Disciplina</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${clientProveedores.map(p => `
+                            <tr>
+                                <td>${escapeHtml(p.nombre)}</td>
+                                <td><code>${p.id}</code></td>
+                                <td><code>${p.licencia}</code></td>
+                                <td>${escapeHtml(p.contacto || '-')}</td>
+                                <td>${p.disciplina === 'electrical' ? '⚡ Eléctrico' : p.disciplina === 'instrumentation' ? '📟 Instrumentación' : '🔧 Ambas'}</td>
+                                <td>
+                                    <button class="btn-icon-sm download-config" data-id="${p.id}">📥</button>
+                                    <button class="btn-icon-sm delete-contractor" data-id="${p.id}" style="color: #ef4444;">🗑️</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            // Eventos de descarga
+            container.querySelectorAll('.download-config').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const proveedor = clientProveedores.find(p => p.id === btn.dataset.id);
+                    if (proveedor) generarArchivoParaProveedor(proveedor);
+                });
+            });
+            
+            // Eventos de eliminación
+            container.querySelectorAll('.delete-contractor').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (confirm('¿Eliminar este proveedor?')) {
+                        clientProveedores = clientProveedores.filter(p => p.id !== btn.dataset.id);
+                        saveClientProveedores();
+                        renderContractorsTable();
+                        notifications.success('Proveedor eliminado');
+                    }
+                });
+            });
+        }
+        
+        function generarArchivoParaProveedor(proveedor) {
+            const archivoProveedor = {
+                metadata: {
+                    version: "2.0",
+                    type: "proveedor-config",
+                    generatedAt: new Date().toISOString(),
+                    generatedBy: "Contratista General"
+                },
+                proveedor: {
+                    id: proveedor.id,
+                    licencia: proveedor.licencia,
+                    nombre: proveedor.nombre,
+                    contacto: proveedor.contacto || '',
+                    email: proveedor.email || '',
+                    telefono: proveedor.telefono || '',
+                    disciplina: proveedor.disciplina || 'both'
+                },
+                instrucciones: {
+                    titulo: "Configuración de Proveedor",
+                    pasos: [
+                        "1. Abra el portal de proveedores: /pages/subcontractor.html",
+                        "2. Haga clic en 'Importar archivo de configuración'",
+                        "3. Seleccione este archivo JSON",
+                        "4. Complete los checklists según corresponda",
+                        "5. Exporte los reportes y envíelos al contratista general"
+                    ]
+                }
+            };
+            
+            const jsonStr = JSON.stringify(archivoProveedor, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `proveedor-${proveedor.nombre.replace(/\s/g, '-')}-config.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            notifications.success(`Archivo generado para ${proveedor.nombre}`);
+        }
+        
+        function generarNuevoProveedor() {
+            const nombre = document.getElementById('newContractorName').value.trim();
+            if (!nombre) {
+                notifications.warning('Ingrese el nombre del proveedor');
+                return;
+            }
+            
+            const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            
+            const nuevoProveedor = {
+                id: id,
+                licencia: licencia,
+                nombre: nombre,
+                contacto: document.getElementById('newContractorContact').value,
+                email: document.getElementById('newContractorEmail').value,
+                telefono: document.getElementById('newContractorPhone').value,
+                disciplina: document.getElementById('newContractorDiscipline').value,
+                createdAt: new Date().toISOString()
+            };
+            
+            clientProveedores.push(nuevoProveedor);
+            saveClientProveedores();
+            
+            // Generar y descargar archivo
+            generarArchivoParaProveedor(nuevoProveedor);
+            
+            // Cerrar modal
+            document.getElementById('newContractorModal').style.display = 'none';
+            renderContractorsTable();
+            
+            notifications.success(`Proveedor ${nombre} creado`);
+        }
+        
+        // Eventos de modales
+        document.getElementById('manageContractorsBtn')?.addEventListener('click', () => {
+            document.getElementById('manageContractorsModal').style.display = 'flex';
+            renderContractorsTable();
+        });
+        
+        document.getElementById('newContractorBtn')?.addEventListener('click', () => {
+            document.getElementById('newContractorModal').style.display = 'flex';
+        });
+        
+        document.getElementById('saveNewContractorBtn')?.addEventListener('click', generarNuevoProveedor);
+        
+        document.getElementById('cancelNewContractorBtn')?.addEventListener('click', () => {
+            document.getElementById('newContractorModal').style.display = 'none';
+        });
+        
+        // Cerrar modales con botón X
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.closest('.modal').style.display = 'none';
+            });
+        });
+        
+        // Cerrar modal al hacer clic fuera
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+        
+        // Cargar proveedores al iniciar
+        await loadClientProveedores();
+        
+        // ============================================
+        // FIN GESTIÓN DE PROVEEDORES
+        // ============================================        
         initTheme();
         initSidebar();
         init();
