@@ -386,6 +386,59 @@
                 }
             });
         }
+
+        async function generarArchivoProveedor(proveedorData) {
+            // Generar ID único
+            const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            
+            const archivoProveedor = {
+                metadata: {
+                    version: "2.0",
+                    type: "proveedor-config",
+                    generatedAt: new Date().toISOString(),
+                    generatedBy: "Contratista General"
+                },
+                proveedor: {
+                    id: id,
+                    licencia: licencia,
+                    nombre: proveedorData.nombre,
+                    contacto: proveedorData.contacto,
+                    email: proveedorData.email,
+                    telefono: proveedorData.telefono,
+                    disciplina: proveedorData.disciplina
+                },
+                instrucciones: {
+                    titulo: "Configuración de Proveedor",
+                    pasos: [
+                        "1. Abra el portal de proveedores: /pages/subcontractor.html",
+                        "2. Haga clic en 'Importar archivo de configuración'",
+                        "3. Seleccione este archivo JSON",
+                        "4. Complete los checklists según corresponda",
+                        "5. Exporte los reportes y envíelos al contratista general"
+                    ]
+                }
+            };
+            
+            const jsonStr = JSON.stringify(archivoProveedor, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `proveedor-${proveedorData.nombre.replace(/\s/g, '-')}-config.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            // Guardar en la lista de proveedores del cliente
+            await clientStorage.addProveedor({
+                ...proveedorData,
+                id: id,
+                licencia: licencia,
+                createdAt: new Date().toISOString()
+            });
+            
+            return { id, licencia };
+        }
         
         function updateProveedoresList(proveedores) {
             const container = document.getElementById('proveedoresList');
