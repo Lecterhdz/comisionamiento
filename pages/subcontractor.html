@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Portal Subcontratista - Comisionamiento PWA</title>
+    
+    <link rel="stylesheet" href="/comisionamiento/css/variables.css">
+    <link rel="stylesheet" href="/comisionamiento/css/reset.css">
+    <link rel="stylesheet" href="/comisionamiento/css/utilities.css">
+    <link rel="stylesheet" href="/comisionamiento/css/buttons.css">
+    <link rel="stylesheet" href="/comisionamiento/css/cards.css">
+    <link rel="stylesheet" href="/comisionamiento/css/forms.css">
+    
+    <style>
+        body { background: var(--bg-primary); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+        .subcontractor-container { max-width: 900px; width: 100%; }
+        .file-upload-area { border: 2px dashed var(--border-color); border-radius: var(--radius-lg); padding: 2rem; text-align: center; cursor: pointer; transition: all var(--transition-fast); margin-bottom: 1rem; }
+        .file-upload-area:hover { border-color: var(--primary-500); background: var(--bg-secondary); }
+        [data-theme="dark"] .file-upload-area:hover { border-color: var(--accent-neon); }
+        .checklist-item { display: flex; align-items: flex-start; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--border-color); }
+        .checklist-item:hover { background: var(--bg-secondary); }
+        .badge-critical { background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 0.5rem; }
+        .progress-bar-container { height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: var(--primary-500); transition: width 0.3s; }
+        [data-theme="dark"] .progress-bar-fill { background: var(--accent-neon); }
+        .license-card { background: linear-gradient(135deg, var(--primary-50), var(--bg-secondary)); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; text-align: center; }
+        [data-theme="dark"] .license-card { background: linear-gradient(135deg, rgba(0,242,255,0.1), var(--bg-secondary)); }
+        .license-code { font-family: monospace; font-size: 1.2rem; background: var(--bg-primary); padding: 0.5rem 1rem; border-radius: var(--radius-md); display: inline-block; border: 1px solid var(--border-color); }
+    </style>
+</head>
+<body>
+    <div class="subcontractor-container">
+        <div class="text-center mb-4">
+            <h1 class="text-2xl font-bold">📋 Portal Subcontratista</h1>
+            <p class="text-muted">Complete su checklist y devuelva el archivo al contratista general</p>
+        </div>
+        
+        <!-- Tarjeta de identificación -->
+        <div class="license-card">
+            <h3>🔐 Identificación del Contratista</h3>
+            <div class="grid grid-cols-2 gap-3 mt-3">
+                <div class="form-group">
+                    <label>ID del Contratista</label>
+                    <input type="text" id="contractorId" class="form-input" placeholder="Ej: CTR-XXXXXX-XXXX">
+                </div>
+                <div class="form-group">
+                    <label>Clave de Licencia</label>
+                    <input type="text" id="licenseKey" class="form-input" placeholder="COM-XXXXXX-XXXXXX">
+                </div>
+                <div class="form-group">
+                    <label>Nombre del Contratista</label>
+                    <input type="text" id="contractorName" class="form-input" placeholder="Nombre de la empresa">
+                </div>
+                <div class="form-group">
+                    <label>Disciplina</label>
+                    <select id="discipline" class="form-select">
+                        <option value="electrical">⚡ Eléctrico</option>
+                        <option value="instrumentation">📟 Instrumentación</option>
+                        <option value="both">🔧 Ambas</option>
+                    </select>
+                </div>
+            </div>
+            <button id="generateLicenseBtn" class="btn-outline mt-3">🎫 Generar ID y Licencia</button>
+        </div>
+        
+        <!-- Sección de Importación -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>📂 1. Importar archivo del contratista general</h3>
+            </div>
+            <div class="card-body">
+                <div class="file-upload-area" id="fileUploadArea">
+                    <div style="font-size: 3rem;">📁</div>
+                    <p>Arrastre o haga clic para seleccionar archivo JSON</p>
+                    <p class="text-sm text-muted">Archivo generado por el contratista general</p>
+                    <input type="file" id="fileInput" accept=".json" style="display: none;">
+                </div>
+                <div id="importStatus" class="mt-3" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <!-- Sección de Checklist -->
+        <div id="checklistSection" style="display: none;">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>✅ 2. Completar Checklist</h3>
+                </div>
+                <div class="card-body">
+                    <div id="checklistContainer"></div>
+                    <div class="mt-4">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="checklistProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <span id="progressText">0% completado</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sección de Exportación -->
+        <div id="exportSection" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>📤 3. Exportar y devolver</h3>
+                </div>
+                <div class="card-body">
+                    <p>Complete el checklist y exporte el archivo para devolverlo al contratista general.</p>
+                    <button id="exportJSONBtn" class="btn-primary w-100 mt-3">📄 Exportar JSON para devolver</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center text-sm text-muted mt-4">
+            <p>Comisionamiento PWA v2.0 - Sistema de gestión de comisionamiento</p>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initTheme } from '/comisionamiento/js/core/theme.js';
+        import { importExportService } from '/comisionamiento/js/services/import-export.js';
+        import { notifications } from '/comisionamiento/js/services/notifications.js';
+        
+        let currentData = null;
+        let currentItems = [];
+        
+        // Generar ID y Licencia
+        document.getElementById('generateLicenseBtn')?.addEventListener('click', () => {
+            const name = document.getElementById('contractorName').value || 'Contratista';
+            const id = importExportService.generateContractorId();
+            const license = importExportService.generateLicenseKey('GENERAL', id);
+            
+            document.getElementById('contractorId').value = id;
+            document.getElementById('licenseKey').value = license;
+            
+            notifications.success('ID y Licencia generados');
+        });
+        
+        // File upload
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInput = document.getElementById('fileInput');
+        
+        fileUploadArea.addEventListener('click', () => fileInput.click());
+        
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.style.borderColor = 'var(--primary-500)';
+        });
+        
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.style.borderColor = 'var(--border-color)';
+        });
+        
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadArea.style.borderColor = 'var(--border-color)';
+            const file = e.dataTransfer.files[0];
+            if (file) processFile(file);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) processFile(e.target.files[0]);
+        });
+        
+        async function processFile(file) {
+            const statusDiv = document.getElementById('importStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<div class="alert alert-info">⏳ Procesando archivo...</div>';
+            
+            try {
+                const content = await file.text();
+                const data = JSON.parse(content);
+                
+                if (!data.contractor) {
+                    throw new Error('Archivo inválido: no contiene datos de contratista');
+                }
+                
+                currentData = data;
+                
+                // Cargar datos del contratista
+                document.getElementById('contractorId').value = data.contractor.id || '';
+                document.getElementById('licenseKey').value = data.contractor.licenseKey || '';
+                document.getElementById('contractorName').value = data.contractor.name || '';
+                document.getElementById('discipline').value = data.contractor.discipline || 'both';
+                
+                // Cargar checklist
+                loadChecklist(data.checklist);
+                
+                statusDiv.innerHTML = '<div class="alert alert-success">✅ Archivo importado correctamente</div>';
+                setTimeout(() => statusDiv.style.display = 'none', 3000);
+                
+                document.getElementById('checklistSection').style.display = 'block';
+                document.getElementById('exportSection').style.display = 'block';
+                
+                notifications.success('Archivo importado correctamente');
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${error.message}</div>`;
+                notifications.error(error.message);
+            }
+        }
+        
+        function loadChecklist(checklist) {
+            const container = document.getElementById('checklistContainer');
+            if (!container) return;
+            
+            currentItems = [];
+            let html = '';
+            
+            // Eléctrico
+            if (checklist.electrical && checklist.electrical.length > 0) {
+                html += `<h4 class="mt-3 mb-2">⚡ Checklist Eléctrico</h4>`;
+                checklist.electrical.forEach(item => {
+                    currentItems.push({ ...item, category: 'electrical' });
+                    html += `
+                        <div class="checklist-item">
+                            <input type="checkbox" data-id="${item.id}" data-category="electrical" ${item.completed ? 'checked' : ''} style="margin-top: 0.25rem;">
+                            <div style="flex: 1;">
+                                <div>
+                                    <strong>${escapeHtml(item.item)}</strong>
+                                    ${item.critical ? '<span class="badge-critical">CRÍTICO</span>' : ''}
+                                </div>
+                                <div class="text-sm text-muted">Norma: ${escapeHtml(item.norm)}</div>
+                                <textarea data-id="${item.id}" class="form-textarea mt-2" placeholder="Notas..." rows="2" style="font-size: 0.8rem;">${escapeHtml(item.notes || '')}</textarea>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Instrumentación
+            if (checklist.instrumentation && checklist.instrumentation.length > 0) {
+                html += `<h4 class="mt-4 mb-2">📟 Checklist Instrumentación</h4>`;
+                checklist.instrumentation.forEach(item => {
+                    currentItems.push({ ...item, category: 'instrumentation' });
+                    html += `
+                        <div class="checklist-item">
+                            <input type="checkbox" data-id="${item.id}" data-category="instrumentation" ${item.completed ? 'checked' : ''} style="margin-top: 0.25rem;">
+                            <div style="flex: 1;">
+                                <div>
+                                    <strong>${escapeHtml(item.item)}</strong>
+                                    ${item.critical ? '<span class="badge-critical">CRÍTICO</span>' : ''}
+                                </div>
+                                <div class="text-sm text-muted">Norma: ${escapeHtml(item.norm)}</div>
+                                <textarea data-id="${item.id}" class="form-textarea mt-2" placeholder="Notas..." rows="2" style="font-size: 0.8rem;">${escapeHtml(item.notes || '')}</textarea>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = html || '<p class="text-center text-muted">No hay items para completar</p>';
+            
+            // Event listeners
+            container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    const id = e.target.dataset.id;
+                    const completed = e.target.checked;
+                    const notesArea = container.querySelector(`textarea[data-id="${id}"]`);
+                    const notes = notesArea?.value || '';
+                    
+                    const item = currentItems.find(i => i.id === id);
+                    if (item) {
+                        item.completed = completed;
+                        item.notes = notes;
+                    }
+                    
+                    updateProgress();
+                });
+            });
+            
+            container.querySelectorAll('textarea').forEach(ta => {
+                let timeout;
+                ta.addEventListener('input', (e) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        const id = e.target.dataset.id;
+                        const completed = container.querySelector(`input[data-id="${id}"]`)?.checked || false;
+                        const notes = e.target.value;
+                        
+                        const item = currentItems.find(i => i.id === id);
+                        if (item) {
+                            item.completed = completed;
+                            item.notes = notes;
+                        }
+                    }, 500);
+                });
+            });
+            
+            updateProgress();
+        }
+        
+        function updateProgress() {
+            const total = currentItems.length;
+            const completed = currentItems.filter(i => i.completed).length;
+            const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+            
+            const progressFill = document.getElementById('checklistProgress');
+            const progressText = document.getElementById('progressText');
+            
+            if (progressFill) progressFill.style.width = `${percent}%`;
+            if (progressText) progressText.textContent = `${percent}% completado (${completed}/${total})`;
+        }
+        
+        // Exportar JSON para devolver
+        document.getElementById('exportJSONBtn')?.addEventListener('click', async () => {
+            const exportData = {
+                metadata: {
+                    version: '1.0',
+                    exportedAt: new Date().toISOString(),
+                    generatedBy: 'Subcontratista'
+                },
+                contractor: {
+                    id: document.getElementById('contractorId').value,
+                    name: document.getElementById('contractorName').value,
+                    discipline: document.getElementById('discipline').value,
+                    licenseKey: document.getElementById('licenseKey').value
+                },
+                checklist: {
+                    electrical: currentItems.filter(i => i.category === 'electrical'),
+                    instrumentation: currentItems.filter(i => i.category === 'instrumentation')
+                }
+            };
+            
+            const jsonStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `reporte-${document.getElementById('contractorName').value.replace(/\s/g, '-')}-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            notifications.success('Archivo exportado. Envíelo al contratista general.');
+        });
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        initTheme();
+    </script>
+</body>
+</html>
