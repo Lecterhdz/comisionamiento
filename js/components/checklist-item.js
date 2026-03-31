@@ -18,7 +18,7 @@ export function renderChecklist(containerId, items, category, onItemChange) {
         
         html += `
             <div class="checklist-section expanded">
-                <div class="checklist-section-header" data-section="${section}">
+                <div class="checklist-section-header">
                     <div class="section-title">
                         <span>📁</span>
                         <span>${section}</span>
@@ -59,9 +59,6 @@ export function renderChecklist(containerId, items, category, onItemChange) {
             const notesTextarea = container.querySelector(`textarea[data-id="${id}"]`);
             const notes = notesTextarea?.value || '';
             onItemChange(id, completed, notes);
-            
-            // Actualizar progreso de sección
-            updateSectionProgress(container, id, completed);
         });
     });
     
@@ -85,21 +82,6 @@ export function renderChecklist(containerId, items, category, onItemChange) {
             section.classList.toggle('expanded');
         });
     });
-}
-
-function updateSectionProgress(container, itemId, completed) {
-    const item = container.querySelector(`.checklist-item[data-item-id="${itemId}"]`);
-    const section = item?.closest('.checklist-section');
-    if (!section) return;
-    
-    const itemsInSection = section.querySelectorAll('.checklist-item');
-    const completedInSection = section.querySelectorAll('input[type="checkbox"]:checked').length;
-    const percent = Math.round((completedInSection / itemsInSection.length) * 100);
-    
-    const progressSpan = section.querySelector('.section-progress');
-    if (progressSpan) {
-        progressSpan.innerHTML = `${completedInSection}/${itemsInSection.length} (${percent}%) <span class="section-expand">▼</span>`;
-    }
 }
 
 export function updateGlobalProgress(items) {
