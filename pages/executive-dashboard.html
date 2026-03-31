@@ -128,67 +128,67 @@
             </div>
 
             
-<!-- Modal para gestionar proveedores -->
-<div id="manageContractorsModal" class="modal" style="display: none;">
-    <div class="modal-content modal-lg">
-        <div class="modal-header">
-            <h3>👥 Gestionar Proveedores</h3>
-            <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <button id="newContractorBtn" class="btn-primary mb-3">+ Nuevo Proveedor</button>
-            <div id="contractorsTable"></div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal para nuevo proveedor -->
-<div id="newContractorModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>➕ Nuevo Proveedor</h3>
-            <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label>Nombre de la Empresa *</label>
-                <input type="text" id="newContractorName" class="form-input" placeholder="Nombre del proveedor">
+            <!-- Modal para gestionar proveedores -->
+            <div id="manageContractorsModal" class="modal" style="display: none;">
+                <div class="modal-content modal-lg">
+                    <div class="modal-header">
+                        <h3>👥 Gestionar Proveedores</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <button id="newContractorBtn" class="btn-primary mb-3">+ Nuevo Proveedor</button>
+                        <div id="contractorsTable"></div>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Persona de Contacto</label>
-                <input type="text" id="newContractorContact" class="form-input" placeholder="Nombre del responsable">
-            </div>
-            <div class="form-group">
-                <label>Email de Contacto</label>
-                <input type="email" id="newContractorEmail" class="form-input" placeholder="correo@empresa.com">
-            </div>
-            <div class="form-group">
-                <label>Teléfono</label>
-                <input type="tel" id="newContractorPhone" class="form-input" placeholder="55 1234 5678">
-            </div>
-            <div class="form-group">
-                <label>Disciplina</label>
-                <select id="newContractorDiscipline" class="form-select">
-                    <option value="electrical">⚡ Eléctrico</option>
-                    <option value="instrumentation">📟 Instrumentación</option>
-                    <option value="both">🔧 Ambas</option>
-                </select>
-            </div>
-            <div class="alert alert-info">
-                <strong>📌 Se generará automáticamente:</strong>
-                <ul class="mt-2">
-                    <li>ID único del proveedor</li>
-                    <li>Clave de licencia</li>
-                    <li>Archivo JSON para que el proveedor importe</li>
-                </ul>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button id="cancelNewContractorBtn" class="btn-outline">Cancelar</button>
-            <button id="saveNewContractorBtn" class="btn-primary">Generar y Descargar</button>
-        </div>
-    </div>
-</div>   
+            
+            <!-- Modal para nuevo proveedor -->
+            <div id="newContractorModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>➕ Nuevo Proveedor</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Nombre de la Empresa *</label>
+                            <input type="text" id="newContractorName" class="form-input" placeholder="Nombre del proveedor">
+                        </div>
+                        <div class="form-group">
+                            <label>Persona de Contacto</label>
+                            <input type="text" id="newContractorContact" class="form-input" placeholder="Nombre del responsable">
+                        </div>
+                        <div class="form-group">
+                            <label>Email de Contacto</label>
+                            <input type="email" id="newContractorEmail" class="form-input" placeholder="correo@empresa.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="tel" id="newContractorPhone" class="form-input" placeholder="55 1234 5678">
+                        </div>
+                        <div class="form-group">
+                            <label>Disciplina</label>
+                            <select id="newContractorDiscipline" class="form-select">
+                                <option value="electrical">⚡ Eléctrico</option>
+                                <option value="instrumentation">📟 Instrumentación</option>
+                                <option value="both">🔧 Ambas</option>
+                            </select>
+                        </div>
+                        <div class="alert alert-info">
+                            <strong>📌 Se generará automáticamente:</strong>
+                            <ul class="mt-2">
+                                <li>ID único del proveedor</li>
+                                <li>Clave de licencia</li>
+                                <li>Archivo JSON para que el proveedor importe</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="cancelNewContractorBtn" class="btn-outline">Cancelar</button>
+                        <button id="saveNewContractorBtn" class="btn-primary">Generar y Descargar</button>
+                    </div>
+                </div>
+            </div>   
 
             
             <!-- Tarjetas de resumen -->
