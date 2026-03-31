@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <title>Reportes - Comisionamiento PWA</title>
+    
+    <!-- CSS Core -->
+    <link rel="stylesheet" href="/comisionamiento/css/core/variables.css">
+    <link rel="stylesheet" href="/comisionamiento/css/core/reset.css">
+    <link rel="stylesheet" href="/comisionamiento/css/core/utilities.css">
+    
+    <!-- CSS Layout -->
+    <link rel="stylesheet" href="/comisionamiento/css/layout/grid.css">
+    <link rel="stylesheet" href="/comisionamiento/css/layout/sidebar.css">
+    <link rel="stylesheet" href="/comisionamiento/css/layout/header.css">
+    
+    <!-- CSS Components -->
+    <link rel="stylesheet" href="/comisionamiento/css/components/buttons.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/cards.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/forms.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/modals.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/animations.css">
+    
+    <!-- CSS Features -->
+    <link rel="stylesheet" href="/comisionamiento/css/checklist.css">
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/comisionamiento/index.html" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">Comisiona</span>
+            </a>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Cerrar menú">✕</button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="/comisionamiento/index.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="/comisionamiento/pages/checklist-electrical.html" class="nav-item">
+                <span class="nav-icon">⚡</span>
+                <span class="nav-text">Checklist Eléctrico</span>
+            </a>
+            <a href="/comisionamiento/pages/checklist-instrumentation.html" class="nav-item">
+                <span class="nav-icon">📟</span>
+                <span class="nav-text">Instrumentación</span>
+            </a>
+            <a href="/comisionamiento/pages/punchlist.html" class="nav-item">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Punchlist</span>
+                <span class="badge" id="punchlistBadge">0</span>
+            </a>
+            <a href="/comisionamiento/pages/reports.html" class="nav-item active">
+                <span class="nav-icon">📄</span>
+                <span class="nav-text">Reportes</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <button id="themeToggle" class="theme-toggle-btn">
+                <span class="theme-icon-dark">🌙</span>
+                <span class="theme-icon-light">☀️</span>
+                <span class="theme-text">Modo oscuro</span>
+            </button>
+        </div>
+    </aside>
+    
+    <main class="main-content">
+        <header class="top-bar">
+            <button class="hamburger" id="hamburger" aria-label="Abrir menú">
+                <span></span><span></span><span></span>
+            </button>
+            <h1 class="page-title">Reportes</h1>
+            <div class="top-bar-actions">
+                <button id="themeToggleMobile" class="mobile-theme-toggle" aria-label="Cambiar tema">🌙</button>
+            </div>
+        </header>
+        
+        <div class="content-container">
+            <div class="grid grid-cols-2">
+                <!-- Reporte de progreso -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📊 Reporte de Progreso</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Genera un reporte detallado del avance en los checklists de comisionamiento.</p>
+                        <div class="form-group mt-3">
+                            <label>Formato de exportación</label>
+                            <select id="exportFormat" class="form-select">
+                                <option value="pdf">PDF - Documento profesional</option>
+                                <option value="excel">Excel - Datos tabulados</option>
+                                <option value="csv">CSV - Compatible con otros sistemas</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Incluir detalles</label>
+                            <div class="checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="includeNotes" checked> Incluir notas
+                                </label>
+                                <label>
+                                    <input type="checkbox" id="includePunchlist" checked> Incluir punchlist
+                                </label>
+                            </div>
+                        </div>
+                        <button id="exportProgressBtn" class="btn btn-primary w-100 mt-3">
+                            📄 Exportar reporte de progreso
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Reporte de punchlist -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📋 Reporte de Punchlist</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Genera un reporte completo de todas las observaciones y pendientes.</p>
+                        <div class="form-group mt-3">
+                            <label>Filtrar por estado</label>
+                            <select id="punchlistStatusFilter" class="form-select">
+                                <option value="all">Todos los estados</option>
+                                <option value="pending">Pendientes</option>
+                                <option value="in-progress">En proceso</option>
+                                <option value="resolved">Resueltos</option>
+                            </select>
+                        </div>
+                        <button id="exportPunchlistBtn" class="btn btn-outline w-100 mt-3">
+                            📋 Exportar punchlist
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resumen rápido -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3>📈 Resumen ejecutivo</h3>
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-cols-3" id="summaryStats">
+                        <div class="stat-card text-center">
+                            <div class="stat-value" id="totalElectrical">-</div>
+                            <div class="stat-label">Items Eléctricos</div>
+                        </div>
+                        <div class="stat-card text-center">
+                            <div class="stat-value" id="totalInstrumentation">-</div>
+                            <div class="stat-label">Items Instrumentación</div>
+                        </div>
+                        <div class="stat-card text-center">
+                            <div class="stat-value" id="totalPunchlist">-</div>
+                            <div class="stat-label">Observaciones</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script type="module">
+        import { initTheme } from '/comisionamiento/js/core/theme.js';
+        import { initSidebar } from '/comisionamiento/js/components/sidebar.js';
+        import { initStorage, getChecklistItems, getAllPunchlistItems, getPunchlistSummary } from '/comisionamiento/js/core/storage.js';
+        import { notifications } from '/comisionamiento/js/services/notifications.js';
+        import { logger } from '/comisionamiento/js/core/logger.js';
+        
+        const log = logger.setContext('Reports');
+        
+        async function loadSummary() {
+            try {
+                await initStorage();
+                
+                const electricalItems = await getChecklistItems('electrical');
+                const instrumentationItems = await getChecklistItems('instrumentation');
+                const punchlistItems = await getAllPunchlistItems();
+                const punchlistSummary = await getPunchlistSummary();
+                
+                document.getElementById('totalElectrical').textContent = electricalItems.length;
+                document.getElementById('totalInstrumentation').textContent = instrumentationItems.length;
+                document.getElementById('totalPunchlist').textContent = punchlistSummary.total;
+                
+                log.info('Resumen cargado');
+            } catch (error) {
+                log.error('Error cargando resumen:', error);
+            }
+        }
+        
+        // Exportar progreso
+        document.getElementById('exportProgressBtn')?.addEventListener('click', async () => {
+            const format = document.getElementById('exportFormat').value;
+            const includeNotes = document.getElementById('includeNotes').checked;
+            const includePunchlist = document.getElementById('includePunchlist').checked;
+            
+            notifications.info(`Exportando a ${format.toUpperCase()}...`);
+            
+            // Aquí irá la lógica de exportación
+            setTimeout(() => {
+                notifications.success(`Reporte exportado en formato ${format.toUpperCase()}`);
+            }, 1500);
+        });
+        
+        // Exportar punchlist
+        document.getElementById('exportPunchlistBtn')?.addEventListener('click', async () => {
+            const statusFilter = document.getElementById('punchlistStatusFilter').value;
+            
+            notifications.info('Exportando punchlist...');
+            
+            setTimeout(() => {
+                notifications.success('Punchlist exportado');
+            }, 1500);
+        });
+        
+        // Actualizar badge
+        async function updateBadge() {
+            const summary = await getPunchlistSummary();
+            const badge = document.getElementById('punchlistBadge');
+            if (badge) badge.textContent = summary.total;
+        }
+        
+        initTheme();
+        initSidebar();
+        loadSummary();
+        updateBadge();
+    </script>
+</body>
+</html>
