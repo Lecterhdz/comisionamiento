@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <title>Dashboard Ejecutivo - Comisionamiento PWA</title>
     
     <!-- CSS Core -->
     <link rel="stylesheet" href="/comisionamiento/css/variables.css">
-    <link rel="stylesheet" href="/comisionamiento/css/core/reset.css">
-    <link rel="stylesheet" href="/comisionamiento/css/core/utilities.css">
+    <link rel="stylesheet" href="/comisionamiento/css/reset.css">
+    <link rel="stylesheet" href="/comisionamiento/css/utilities.css">
     
     <!-- CSS Layout -->
-    <link rel="stylesheet" href="/comisionamiento/css/layout/grid.css">
-    <link rel="stylesheet" href="/comisionamiento/css/layout/sidebar.css">
-    <link rel="stylesheet" href="/comisionamiento/css/layout/header.css">
+    <link rel="stylesheet" href="/comisionamiento/css/grid.css">
+    <link rel="stylesheet" href="/comisionamiento/css/sidebar.css">
+    <link rel="stylesheet" href="/comisionamiento/css/header.css">
     
     <!-- CSS Components -->
-    <link rel="stylesheet" href="/comisionamiento/css/components/buttons.css">
-    <link rel="stylesheet" href="/comisionamiento/css/components/cards.css">
-    <link rel="stylesheet" href="/comisionamiento/css/components/forms.css">
-    <link rel="stylesheet" href="/comisionamiento/css/components/modals.css">
-    <link rel="stylesheet" href="/comisionamiento/css/components/animations.css">
+    <link rel="stylesheet" href="/comisionamiento/css/buttons.css">
+    <link rel="stylesheet" href="/comisionamiento/css/cards.css">
+    <link rel="stylesheet" href="/comisionamiento/css/forms.css">
+    <link rel="stylesheet" href="/comisionamiento/css/modals.css">
+    <link rel="stylesheet" href="/comisionamiento/css/animations.css">
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -40,8 +42,13 @@
         [data-theme="dark"] .file-upload-area:hover { border-color: var(--accent-neon); }
         .prorroga-badge { background: #f59e0b; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px; }
         .etapa-tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; background: var(--bg-tertiary); }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .table th { background: var(--bg-tertiary); font-weight: 600; }
+        .btn-icon-sm { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); }
+        .btn-icon-sm:hover { background: var(--bg-tertiary); }
     </style>
-</head>    
+</head>
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     
@@ -109,12 +116,13 @@
                 <button id="exportConsolidadoBtn" class="btn-primary btn-sm">📄 Exportar Consolidado</button>
             </div>
         </header>
-
+        
         <div class="content-container" id="reportContent">
             <!-- Importar reportes de proveedores -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h3>📥 Importar reporte de proveedor</h3>
+                    <button id="manageContractorsBtn" class="btn-outline btn-sm">👥 Gestionar Proveedores</button>
                 </div>
                 <div class="card-body">
                     <div class="file-upload-area" id="fileUploadArea">
@@ -126,7 +134,7 @@
                     <div id="importStatus" class="mt-3" style="display: none;"></div>
                 </div>
             </div>
-      
+            
             <!-- Tarjetas de resumen -->
             <div class="grid grid-cols-4 mb-4">
                 <div class="stat-card">
@@ -202,20 +210,21 @@
             </div>
         </div>
     </main>
-            <!-- Modal para gestionar proveedores -->
-            <div id="manageContractorsModal" class="modal" style="display: none;">
-                <div class="modal-content modal-lg">
-                    <div class="modal-header">
-                        <h3>👥 Gestionar Proveedores</h3>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <button id="newContractorBtn" class="btn-primary mb-3">+ Nuevo Proveedor</button>
-                        <div id="contractorsTable"></div>
-                    </div>
-                </div>
+    
+    <!-- Modal para gestionar proveedores -->
+    <div id="manageContractorsModal" class="modal" style="display: none;">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3>👥 Gestionar Proveedores</h3>
+                <button class="modal-close">&times;</button>
             </div>
-            
+            <div class="modal-body">
+                <button id="newContractorBtn" class="btn-primary mb-3">+ Nuevo Proveedor</button>
+                <div id="contractorsTable"></div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Modal para nuevo proveedor -->
     <div id="newContractorModal" class="modal" style="display: none;">
         <div class="modal-content">
@@ -262,7 +271,8 @@
                 <button id="saveNewContractorBtn" class="btn-primary">Generar y Descargar</button>
             </div>
         </div>
-    </div>               
+    </div>
+    
     <script type="module">
         import { initTheme, themeManager } from '/comisionamiento/js/core/theme.js';
         import { initSidebar } from '/comisionamiento/js/components/sidebar.js';
@@ -274,352 +284,10 @@
         const log = logger.setContext('ExecutiveDashboard');
         let charts = {};
         
-        async function init() {
-            await reportManager.init();
-            await loadDashboard();
-        }
-        
-        async function loadDashboard() {
-            const consolidado = reportManager.getProgresoConsolidado();
-            const proveedores = reportManager.getProveedores();
-            const prorrogas = reportManager.getReportesProrroga();
-            
-            // Actualizar tarjetas
-            document.getElementById('totalProveedores').textContent = proveedores.length;
-            document.getElementById('totalReportes').textContent = consolidado.totalReportes;
-            document.getElementById('totalProrrogas').textContent = prorrogas.length;
-            
-            // Calcular progreso general
-            let totalItems = 0;
-            let totalCompletados = 0;
-            consolidado.proveedores.forEach(p => {
-                totalItems += p.totalItems;
-                totalCompletados += p.completados;
-            });
-            const progresoGeneral = totalItems > 0 ? Math.round((totalCompletados / totalItems) * 100) : 0;
-            document.getElementById('totalProgreso').textContent = `${progresoGeneral}%`;
-            
-            // Actualizar gráficas
-            updateEtapasChart(consolidado.etapas, themeManager.isDark());
-            updateSistemasChart(consolidado.sistemas, themeManager.isDark());
-            
-            // Actualizar lista de proveedores
-            updateProveedoresList(consolidado.proveedores);
-            
-            // Actualizar reportes por etapa
-            updateReportesPorEtapa(consolidado.etapas);
-            
-            // Actualizar prórrogas
-            updateProrrogasList(prorrogas);
-        }
-        
-        function updateEtapasChart(etapas, isDark) {
-            const ctx = document.getElementById('etapasChart')?.getContext('2d');
-            if (!ctx) return;
-            
-            if (charts.etapas) charts.etapas.destroy();
-            
-            const labels = etapas.map(e => e.etapa.nombre);
-            const data = etapas.map(e => e.porcentaje);
-            
-            charts.etapas = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Progreso (%)',
-                        data: data,
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, max: 100, grid: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' } },
-                        x: { ticks: { color: isDark ? '#f1f5f9' : '#1e293b' } }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { callbacks: { label: (ctx) => `${ctx.raw}% completado` } }
-                    }
-                }
-            });
-        }
-        
-        function updateSistemasChart(sistemas, isDark) {
-            const ctx = document.getElementById('sistemasChart')?.getContext('2d');
-            if (!ctx) return;
-            
-            if (charts.sistemas) charts.sistemas.destroy();
-            
-            const labels = sistemas.map(s => s.sistema.nombre);
-            const data = sistemas.map(s => s.porcentaje);
-            
-            charts.sistemas = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Progreso (%)',
-                        data: data,
-                        backgroundColor: '#8b5cf6',
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, max: 100, grid: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' } },
-                        x: { ticks: { color: isDark ? '#f1f5f9' : '#1e293b', maxRotation: 45, minRotation: 45 } }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { callbacks: { label: (ctx) => `${ctx.raw}% completado` } }
-                    }
-                }
-            });
-        }
-
-        async function generarArchivoProveedor(proveedorData) {
-            // Generar ID único
-            const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-            const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-            
-            const archivoProveedor = {
-                metadata: {
-                    version: "2.0",
-                    type: "proveedor-config",
-                    generatedAt: new Date().toISOString(),
-                    generatedBy: "Contratista General"
-                },
-                proveedor: {
-                    id: id,
-                    licencia: licencia,
-                    nombre: proveedorData.nombre,
-                    contacto: proveedorData.contacto,
-                    email: proveedorData.email,
-                    telefono: proveedorData.telefono,
-                    disciplina: proveedorData.disciplina
-                },
-                instrucciones: {
-                    titulo: "Configuración de Proveedor",
-                    pasos: [
-                        "1. Abra el portal de proveedores: /pages/subcontractor.html",
-                        "2. Haga clic en 'Importar archivo de configuración'",
-                        "3. Seleccione este archivo JSON",
-                        "4. Complete los checklists según corresponda",
-                        "5. Exporte los reportes y envíelos al contratista general"
-                    ]
-                }
-            };
-            
-            const jsonStr = JSON.stringify(archivoProveedor, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `proveedor-${proveedorData.nombre.replace(/\s/g, '-')}-config.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            // Guardar en la lista de proveedores del cliente
-            await clientStorage.addProveedor({
-                ...proveedorData,
-                id: id,
-                licencia: licencia,
-                createdAt: new Date().toISOString()
-            });
-            
-            return { id, licencia };
-        }
-        
-        function updateProveedoresList(proveedores) {
-            const container = document.getElementById('proveedoresList');
-            if (!container) return;
-            
-            if (proveedores.length === 0) {
-                container.innerHTML = '<p class="text-center text-muted">No hay reportes de proveedores importados</p>';
-                return;
-            }
-            
-            container.innerHTML = proveedores.map(p => `
-                <div class="contractor-item">
-                    <div>
-                        <strong>${p.proveedor.nombre}</strong>
-                        <div class="text-sm text-muted">ID: ${p.proveedor.id}</div>
-                        <div class="text-sm text-muted">Contacto: ${p.proveedor.contacto || 'No especificado'}</div>
-                        <div class="text-xs text-muted mt-1">${p.reportes.length} reportes enviados</div>
-                    </div>
-                    <div class="contractor-progress">
-                        <div class="flex-between text-sm mb-1">
-                            <span>Progreso</span>
-                            <span>${p.porcentaje}%</span>
-                        </div>
-                        <div class="progress-small">
-                            <div class="progress-small-fill" style="width: ${p.porcentaje}%"></div>
-                        </div>
-                        <div class="text-xs text-muted mt-1">
-                            ${p.completados}/${p.totalItems} items completados
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        function updateReportesPorEtapa(etapas) {
-            const container = document.getElementById('reportesPorEtapa');
-            if (!container) return;
-            
-            if (etapas.length === 0) {
-                container.innerHTML = '<p class="text-center text-muted">No hay reportes por etapa</p>';
-                return;
-            }
-            
-            container.innerHTML = `
-                <div class="grid grid-cols-3 gap-3">
-                    ${etapas.map(e => `
-                        <div class="p-3 bg-secondary rounded-lg">
-                            <div class="flex-between">
-                                <span class="etapa-tag">${e.etapa.nombre}</span>
-                                <span class="font-bold">${e.porcentaje}%</span>
-                            </div>
-                            <div class="progress-small mt-2">
-                                <div class="progress-small-fill" style="width: ${e.porcentaje}%"></div>
-                            </div>
-                            <div class="text-sm text-muted mt-2">
-                                ${e.completados}/${e.totalItems} items
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-        
-        function updateProrrogasList(prorrogas) {
-            const container = document.getElementById('prorrogasList');
-            if (!container) return;
-            
-            if (prorrogas.length === 0) {
-                container.innerHTML = '<p class="text-center text-muted">No hay prórrogas registradas</p>';
-                return;
-            }
-            
-            container.innerHTML = prorrogas.map(r => `
-                <div class="contractor-item" style="border-left: 3px solid #f59e0b;">
-                    <div>
-                        <strong>${r.datos.proveedor.nombre}</strong>
-                        <span class="prorroga-badge">📅 Prórroga</span>
-                        <div class="text-sm">Proyecto: ${r.datos.proyecto.nombre}</div>
-                        <div class="text-sm">Etapa: ${r.datos.etapa.nombre}</div>
-                        <div class="text-sm">Sistema: ${r.datos.sistema.nombre}</div>
-                        <div class="text-xs text-muted mt-1">Motivo: ${r.prorrogaMotivo || r.datos.metadata?.prorrogaMotivo || 'No especificado'}</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-sm">${formatters.date(r.importadoEn, 'short')}</div>
-                        <div class="text-xs text-muted">Progreso: ${r.datos.estadisticas?.porcentaje || 0}%</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        // File upload
-        const fileUploadArea = document.getElementById('fileUploadArea');
-        const fileInput = document.getElementById('fileInput');
-        
-        fileUploadArea.addEventListener('click', () => fileInput.click());
-        
-        fileUploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileUploadArea.style.borderColor = 'var(--primary-500)';
-        });
-        
-        fileUploadArea.addEventListener('dragleave', () => {
-            fileUploadArea.style.borderColor = 'var(--border-color)';
-        });
-        
-        fileUploadArea.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            fileUploadArea.style.borderColor = 'var(--border-color)';
-            const file = e.dataTransfer.files[0];
-            if (file) await processFile(file);
-        });
-        
-        fileInput.addEventListener('change', async (e) => {
-            if (e.target.files[0]) await processFile(e.target.files[0]);
-        });
-        
-        async function processFile(file) {
-            const statusDiv = document.getElementById('importStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = '<div class="alert alert-info">⏳ Procesando reporte...</div>';
-            
-            try {
-                const content = await file.text();
-                const reportData = JSON.parse(content);
-                
-                const result = await reportManager.importReport(reportData);
-                
-                statusDiv.innerHTML = `<div class="alert alert-success">✅ ${result.message}</div>`;
-                setTimeout(() => statusDiv.style.display = 'none', 3000);
-                
-                await loadDashboard();
-                notifications.success(result.message);
-                
-                if (result.isProrroga) {
-                    notifications.warning('⚠️ Reporte con prórroga registrado');
-                }
-            } catch (error) {
-                statusDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${error.message}</div>`;
-                notifications.error(error.message);
-            }
-        }
-        
-        // Exportar consolidado
-        document.getElementById('exportConsolidadoBtn')?.addEventListener('click', async () => {
-            const consolidado = reportManager.getProgresoConsolidado();
-            const exportData = {
-                metadata: {
-                    version: '2.0',
-                    exportedAt: new Date().toISOString(),
-                    type: 'consolidado'
-                },
-                resumen: {
-                    totalProveedores: document.getElementById('totalProveedores').textContent,
-                    totalReportes: document.getElementById('totalReportes').textContent,
-                    totalProrrogas: document.getElementById('totalProrrogas').textContent,
-                    progresoGeneral: document.getElementById('totalProgreso').textContent
-                },
-                proveedores: consolidado.proveedores,
-                etapas: consolidado.etapas,
-                sistemas: consolidado.sistemas,
-                prorrogas: reportManager.getReportesProrroga().map(r => ({
-                    proveedor: r.datos.proveedor.nombre,
-                    etapa: r.datos.etapa.nombre,
-                    sistema: r.datos.sistema.nombre,
-                    motivo: r.prorrogaMotivo || r.datos.metadata?.prorrogaMotivo,
-                    fecha: r.importadoEn
-                }))
-            };
-            
-            const jsonStr = JSON.stringify(exportData, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `consolidado-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            notifications.success('Reporte consolidado exportado');
-        });
         // ============================================
-        // GESTIÓN DE PROVEEDORES (NUEVO)
+        // GESTIÓN DE PROVEEDORES
         // ============================================
         
-        // Almacenamiento de proveedores en el cliente
         let clientProveedores = [];
         
         async function loadClientProveedores() {
@@ -628,10 +296,17 @@
                 clientProveedores = JSON.parse(saved);
             }
             renderContractorsTable();
+            updateTotalProveedores();
         }
         
         function saveClientProveedores() {
             localStorage.setItem('client_proveedores', JSON.stringify(clientProveedores));
+            updateTotalProveedores();
+        }
+        
+        function updateTotalProveedores() {
+            const totalSpan = document.getElementById('totalProveedores');
+            if (totalSpan) totalSpan.textContent = clientProveedores.length;
         }
         
         function renderContractorsTable() {
@@ -673,7 +348,6 @@
                 </table>
             `;
             
-            // Eventos de descarga
             container.querySelectorAll('.download-config').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const proveedor = clientProveedores.find(p => p.id === btn.dataset.id);
@@ -681,7 +355,6 @@
                 });
             });
             
-            // Eventos de eliminación
             container.querySelectorAll('.delete-contractor').forEach(btn => {
                 btn.addEventListener('click', () => {
                     if (confirm('¿Eliminar este proveedor?')) {
@@ -759,52 +432,192 @@
             clientProveedores.push(nuevoProveedor);
             saveClientProveedores();
             
-            // Generar y descargar archivo
             generarArchivoParaProveedor(nuevoProveedor);
             
-            // Cerrar modal
             document.getElementById('newContractorModal').style.display = 'none';
             renderContractorsTable();
             
             notifications.success(`Proveedor ${nombre} creado`);
         }
         
-        // Eventos de modales
+        // ============================================
+        // FUNCIONES EXISTENTES DEL DASHBOARD
+        // ============================================
+        
+        async function init() {
+            await reportManager.init();
+            await loadClientProveedores();
+            await loadDashboard();
+        }
+        
+        async function loadDashboard() {
+            const consolidado = reportManager.getProgresoConsolidado();
+            const proveedores = reportManager.getProveedores();
+            const prorrogas = reportManager.getReportesProrroga();
+            
+            document.getElementById('totalReportes').textContent = consolidado.totalReportes;
+            document.getElementById('totalProrrogas').textContent = prorrogas.length;
+            
+            let totalItems = 0;
+            let totalCompletados = 0;
+            consolidado.proveedores.forEach(p => {
+                totalItems += p.totalItems;
+                totalCompletados += p.completados;
+            });
+            const progresoGeneral = totalItems > 0 ? Math.round((totalCompletados / totalItems) * 100) : 0;
+            document.getElementById('totalProgreso').textContent = `${progresoGeneral}%`;
+            
+            updateEtapasChart(consolidado.etapas, themeManager.isDark());
+            updateSistemasChart(consolidado.sistemas, themeManager.isDark());
+            updateProveedoresList(consolidado.proveedores);
+            updateReportesPorEtapa(consolidado.etapas);
+            updateProrrogasList(prorrogas);
+        }
+        
+        function updateEtapasChart(etapas, isDark) {
+            const ctx = document.getElementById('etapasChart')?.getContext('2d');
+            if (!ctx) return;
+            if (charts.etapas) charts.etapas.destroy();
+            
+            charts.etapas = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: etapas.map(e => e.etapa.nombre),
+                    datasets: [{ label: 'Progreso (%)', data: etapas.map(e => e.porcentaje), backgroundColor: '#3b82f6', borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+        }
+        
+        function updateSistemasChart(sistemas, isDark) {
+            const ctx = document.getElementById('sistemasChart')?.getContext('2d');
+            if (!ctx) return;
+            if (charts.sistemas) charts.sistemas.destroy();
+            
+            charts.sistemas = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sistemas.map(s => s.sistema.nombre),
+                    datasets: [{ label: 'Progreso (%)', data: sistemas.map(s => s.porcentaje), backgroundColor: '#8b5cf6', borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+        }
+        
+        function updateProveedoresList(proveedores) {
+            const container = document.getElementById('proveedoresList');
+            if (!container) return;
+            if (proveedores.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No hay reportes de proveedores importados</p>';
+                return;
+            }
+            container.innerHTML = proveedores.map(p => `
+                <div class="contractor-item">
+                    <div><strong>${p.proveedor.nombre}</strong><div class="text-sm text-muted">ID: ${p.proveedor.id}</div></div>
+                    <div class="contractor-progress">
+                        <div class="flex-between text-sm mb-1"><span>Progreso</span><span>${p.porcentaje}%</span></div>
+                        <div class="progress-small"><div class="progress-small-fill" style="width: ${p.porcentaje}%"></div></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function updateReportesPorEtapa(etapas) {
+            const container = document.getElementById('reportesPorEtapa');
+            if (!container) return;
+            if (etapas.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No hay reportes por etapa</p>';
+                return;
+            }
+            container.innerHTML = `<div class="grid grid-cols-3 gap-3">${etapas.map(e => `
+                <div class="p-3 bg-secondary rounded-lg">
+                    <div class="flex-between"><span class="etapa-tag">${e.etapa.nombre}</span><span class="font-bold">${e.porcentaje}%</span></div>
+                    <div class="progress-small mt-2"><div class="progress-small-fill" style="width: ${e.porcentaje}%"></div></div>
+                </div>
+            `).join('')}</div>`;
+        }
+        
+        function updateProrrogasList(prorrogas) {
+            const container = document.getElementById('prorrogasList');
+            if (!container) return;
+            if (prorrogas.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No hay prórrogas registradas</p>';
+                return;
+            }
+            container.innerHTML = prorrogas.map(r => `
+                <div class="contractor-item" style="border-left: 3px solid #f59e0b;">
+                    <div><strong>${r.datos.proveedor.nombre}</strong><span class="prorroga-badge">📅 Prórroga</span>
+                    <div class="text-sm">${r.datos.proyecto.nombre} | ${r.datos.etapa.nombre} | ${r.datos.sistema.nombre}</div>
+                    <div class="text-xs text-muted">Motivo: ${r.prorrogaMotivo || r.datos.metadata?.prorrogaMotivo || 'No especificado'}</div></div>
+                </div>
+            `).join('');
+        }
+        
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+        
+        // File upload
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInput = document.getElementById('fileInput');
+        fileUploadArea?.addEventListener('click', () => fileInput?.click());
+        fileUploadArea?.addEventListener('dragover', (e) => { e.preventDefault(); fileUploadArea.style.borderColor = 'var(--primary-500)'; });
+        fileUploadArea?.addEventListener('dragleave', () => { fileUploadArea.style.borderColor = 'var(--border-color)'; });
+        fileUploadArea?.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            fileUploadArea.style.borderColor = 'var(--border-color)';
+            const file = e.dataTransfer.files[0];
+            if (file) await processFile(file);
+        });
+        fileInput?.addEventListener('change', async (e) => { if (e.target.files[0]) await processFile(e.target.files[0]); });
+        
+        async function processFile(file) {
+            const statusDiv = document.getElementById('importStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<div class="alert alert-info">⏳ Procesando reporte...</div>';
+            try {
+                const content = await file.text();
+                const reportData = JSON.parse(content);
+                const result = await reportManager.importReport(reportData);
+                statusDiv.innerHTML = `<div class="alert alert-success">✅ ${result.message}</div>`;
+                setTimeout(() => statusDiv.style.display = 'none', 3000);
+                await loadDashboard();
+                notifications.success(result.message);
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${error.message}</div>`;
+                notifications.error(error.message);
+            }
+        }
+        
+        document.getElementById('exportConsolidadoBtn')?.addEventListener('click', async () => {
+            const consolidado = reportManager.getProgresoConsolidado();
+            const exportData = { metadata: { version: "2.0", exportedAt: new Date().toISOString() }, consolidado };
+            const jsonStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `consolidado-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            notifications.success('Reporte consolidado exportado');
+        });
+        
+        // Eventos modales
         document.getElementById('manageContractorsBtn')?.addEventListener('click', () => {
             document.getElementById('manageContractorsModal').style.display = 'flex';
             renderContractorsTable();
         });
-        
         document.getElementById('newContractorBtn')?.addEventListener('click', () => {
             document.getElementById('newContractorModal').style.display = 'flex';
         });
-        
         document.getElementById('saveNewContractorBtn')?.addEventListener('click', generarNuevoProveedor);
-        
         document.getElementById('cancelNewContractorBtn')?.addEventListener('click', () => {
             document.getElementById('newContractorModal').style.display = 'none';
         });
-        
-        // Cerrar modales con botón X
         document.querySelectorAll('.modal-close').forEach(btn => {
-            btn.addEventListener('click', () => {
-                btn.closest('.modal').style.display = 'none';
-            });
+            btn.addEventListener('click', () => { btn.closest('.modal').style.display = 'none'; });
         });
+        window.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; });
         
-        // Cerrar modal al hacer clic fuera
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                e.target.style.display = 'none';
-            }
-        });
-        
-        // Cargar proveedores al iniciar
-        await loadClientProveedores();
-        
-        // ============================================
-        // FIN GESTIÓN DE PROVEEDORES
-        // ============================================        
         initTheme();
         initSidebar();
         init();
