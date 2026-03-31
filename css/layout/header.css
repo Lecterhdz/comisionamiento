@@ -104,3 +104,29 @@
         font-size: 1rem;
     }
 }
+
+/* ============================================
+   MAIN CONTENT - Se ajusta al sidebar
+   ============================================ */
+
+.main-content {
+    flex: 1;
+    margin-left: 280px;
+    transition: margin-left var(--transition-normal);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Cuando el sidebar está colapsado */
+.sidebar.collapsed ~ .main-content,
+body:has(.sidebar.collapsed) .main-content {
+    margin-left: 80px;
+}
+
+/* En móvil/tablet, no hay margen */
+@media (max-width: 1024px) {
+    .main-content {
+        margin-left: 0 !important;
+    }
+}
