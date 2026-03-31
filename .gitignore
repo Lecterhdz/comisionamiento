@@ -1,0 +1,78 @@
+# Dependencias
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Archivos de construcción
+dist/
+build/
+.out/
+.DS_Store
+
+# Archivos de entorno
+.env
+.env.local
+.env.*.local
+
+# Archivos de editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.editorconfig
+
+# Archivos de sistema
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Archivos de caché de navegador
+.cache/
+
+# Archivos específicos de PWA
+sw.js.map
+manifest.json.map
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Archivos de prueba
+coverage/
+.nyc_output/
+
+# Archivos de reportes generados
+reports/
+*.pdf
+*.xlsx
+*.csv
+
+# Backup
+*.bak
+*.backup
+
+# Archivos de configuración local
+config/local.js
+config/development.js
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
