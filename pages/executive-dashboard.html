@@ -41,7 +41,7 @@
         .prorroga-badge { background: #f59e0b; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px; }
         .etapa-tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; background: var(--bg-tertiary); }
     </style>
-</head>
+</head>    
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     
@@ -109,25 +109,6 @@
                 <button id="exportConsolidadoBtn" class="btn-primary btn-sm">📄 Exportar Consolidado</button>
             </div>
         </header>
-        
-        <div class="content-container" id="reportContent">
-            <!-- Importar reportes de proveedores -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3>📥 Importar reporte de proveedor</h3>
-                </div>
-                <div class="card-body">
-                    <div class="file-upload-area" id="fileUploadArea">
-                        <div style="font-size: 3rem;">📁</div>
-                        <p>Arrastre o haga clic para seleccionar archivo JSON</p>
-                        <p class="text-sm text-muted">Archivos generados por proveedores desde el portal</p>
-                        <input type="file" id="fileInput" accept=".json" style="display: none;">
-                    </div>
-                    <div id="importStatus" class="mt-3" style="display: none;"></div>
-                </div>
-            </div>
-
-            
             <!-- Modal para gestionar proveedores -->
             <div id="manageContractorsModal" class="modal" style="display: none;">
                 <div class="modal-content modal-lg">
@@ -188,9 +169,24 @@
                         <button id="saveNewContractorBtn" class="btn-primary">Generar y Descargar</button>
                     </div>
                 </div>
-            </div>   
-
-            
+            </div>           
+        <div class="content-container" id="reportContent">
+            <!-- Importar reportes de proveedores -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>📥 Importar reporte de proveedor</h3>
+                </div>
+                <div class="card-body">
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <div style="font-size: 3rem;">📁</div>
+                        <p>Arrastre o haga clic para seleccionar archivo JSON</p>
+                        <p class="text-sm text-muted">Archivos generados por proveedores desde el portal</p>
+                        <input type="file" id="fileInput" accept=".json" style="display: none;">
+                    </div>
+                    <div id="importStatus" class="mt-3" style="display: none;"></div>
+                </div>
+            </div>
+      
             <!-- Tarjetas de resumen -->
             <div class="grid grid-cols-4 mb-4">
                 <div class="stat-card">
