@@ -3,15 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#1a1a2e">
-    <title>Comisionamiento PWA | Checklists Eléctricos e Instrumentación</title>
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <title>Comisionamiento PWA | Jarvis Style</title>
     
-    <!-- CSS con rutas absolutas -->
-    <link rel="stylesheet" href="/comisionamiento/css/variables.css">
-    <link rel="stylesheet" href="/comisionamiento/css/base.css">
-    <link rel="stylesheet" href="/comisionamiento/css/layout.css">
-    <link rel="stylesheet" href="/comisionamiento/css/sidebar.css">
-    <link rel="stylesheet" href="/comisionamiento/css/components.css">
+    <!-- CSS Core -->
+    <link rel="stylesheet" href="/comisionamiento/css/core/variables.css">
+    <link rel="stylesheet" href="/comisionamiento/css/core/reset.css">
+    <link rel="stylesheet" href="/comisionamiento/css/core/utilities.css">
+    
+    <!-- CSS Layout -->
+    <link rel="stylesheet" href="/comisionamiento/css/layout/grid.css">
+    <link rel="stylesheet" href="/comisionamiento/css/layout/sidebar.css">
+    <link rel="stylesheet" href="/comisionamiento/css/layout/header.css">
+    
+    <!-- CSS Components -->
+    <link rel="stylesheet" href="/comisionamiento/css/components/buttons.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/cards.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/forms.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/modals.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/animations.css">
+    
+    <!-- CSS Features -->
     <link rel="stylesheet" href="/comisionamiento/css/checklist.css">
     
     <link rel="manifest" href="/comisionamiento/manifest.json">
@@ -21,11 +34,11 @@
     
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="logo">
+            <a href="/comisionamiento/index.html" class="logo">
                 <span class="logo-icon">⚡</span>
-                <span class="logo-text">Comisionamiento PWA</span>
-            </div>
-            <button class="sidebar-close" id="sidebarClose">✕</button>
+                <span class="logo-text">Comisiona</span>
+            </a>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Cerrar menú">✕</button>
         </div>
         
         <nav class="sidebar-nav">
@@ -39,7 +52,7 @@
             </a>
             <a href="/comisionamiento/pages/checklist-instrumentation.html" class="nav-item">
                 <span class="nav-icon">📟</span>
-                <span class="nav-text">Checklist Instrumentación</span>
+                <span class="nav-text">Instrumentación</span>
             </a>
             <a href="/comisionamiento/pages/punchlist.html" class="nav-item">
                 <span class="nav-icon">📋</span>
@@ -63,36 +76,207 @@
     
     <main class="main-content">
         <header class="top-bar">
-            <button class="hamburger" id="hamburger">
-                <span></span><span></span><span></span>
+            <button class="hamburger" id="hamburger" aria-label="Abrir menú">
+                <span></span>
+                <span></span>
+                <span></span>
             </button>
             <h1 class="page-title">Dashboard</h1>
             <div class="top-bar-actions">
-                <button id="themeToggleMobile" class="mobile-theme-toggle">🌙</button>
+                <button id="themeToggleMobile" class="mobile-theme-toggle" aria-label="Cambiar tema">🌙</button>
                 <button id="syncBtn" class="sync-btn" aria-label="Sincronizar">🔄</button>
             </div>
         </header>
         
         <div class="content-container">
-            <!-- Contenido del dashboard -->
-            <div class="progress-cards">
-                <!-- ... contenido ... -->
+            <!-- Tarjetas de progreso -->
+            <div class="grid grid-cols-3">
+                <div class="card progress-card">
+                    <div class="card-body text-center">
+                        <h3>Checklist Eléctrico</h3>
+                        <div class="circular-progress" id="electricalProgress">
+                            <svg viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" class="progress-bg"/>
+                                <circle cx="50" cy="50" r="45" class="progress-fill"/>
+                            </svg>
+                            <div class="progress-value">
+                                <span id="electricalPercent">0</span>%
+                            </div>
+                        </div>
+                        <div class="progress-stats mt-2">
+                            <span>Completados: <strong id="electricalCompleted">0</strong>/<span id="electricalTotal">0</span></span>
+                        </div>
+                        <a href="/comisionamiento/pages/checklist-electrical.html" class="btn btn-outline btn-sm mt-3">Continuar</a>
+                    </div>
+                </div>
+                
+                <div class="card progress-card">
+                    <div class="card-body text-center">
+                        <h3>Instrumentación</h3>
+                        <div class="circular-progress" id="instrumentProgress">
+                            <svg viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" class="progress-bg"/>
+                                <circle cx="50" cy="50" r="45" class="progress-fill"/>
+                            </svg>
+                            <div class="progress-value">
+                                <span id="instrumentPercent">0</span>%
+                            </div>
+                        </div>
+                        <div class="progress-stats mt-2">
+                            <span>Completados: <strong id="instrumentCompleted">0</strong>/<span id="instrumentTotal">0</span></span>
+                        </div>
+                        <a href="/comisionamiento/pages/checklist-instrumentation.html" class="btn btn-outline btn-sm mt-3">Continuar</a>
+                    </div>
+                </div>
+                
+                <div class="card progress-card punchlist-card">
+                    <div class="card-body">
+                        <h3 class="text-center">Punchlist</h3>
+                        <div class="punchlist-summary">
+                            <div class="priority-stats">
+                                <div class="priority-item high">
+                                    <span class="priority-dot"></span>
+                                    <span>Alta:</span>
+                                    <strong id="highCount">0</strong>
+                                </div>
+                                <div class="priority-item medium">
+                                    <span class="priority-dot"></span>
+                                    <span>Media:</span>
+                                    <strong id="mediumCount">0</strong>
+                                </div>
+                                <div class="priority-item low">
+                                    <span class="priority-dot"></span>
+                                    <span>Baja:</span>
+                                    <strong id="lowCount">0</strong>
+                                </div>
+                            </div>
+                            <div class="total-pendings mt-3 text-center">
+                                <span>Total pendientes:</span>
+                                <strong id="totalPendings">0</strong>
+                            </div>
+                        </div>
+                        <a href="/comisionamiento/pages/punchlist.html" class="btn btn-outline btn-sm w-100 mt-3">Ver punchlist</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Últimas observaciones -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3>📋 Últimas observaciones</h3>
+                </div>
+                <div class="card-body">
+                    <div id="recentObservations" class="observations-list">
+                        <p class="text-center text-muted">No hay observaciones recientes</p>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
     
-    <!-- JavaScript con rutas absolutas -->
+    <!-- JavaScript Modular -->
     <script type="module">
-        import { initTheme } from '/comisionamiento/js/core/theme.js';
-        import { initSidebar } from '/comisionamiento/js/components/sidebar.js';
+        import { themeManager, initTheme } from '/comisionamiento/js/core/theme.js';
+        import { sidebarManager, initSidebar } from '/comisionamiento/js/components/sidebar.js';
         import { registerSW } from '/comisionamiento/js/core/sw-register.js';
         import { initStorage, getChecklistProgress, getPunchlistSummary, getRecentObservations } from '/comisionamiento/js/core/storage.js';
         import { updateCircularProgress } from '/comisionamiento/js/components/circular-progress.js';
+        import { notifications } from '/comisionamiento/js/services/notifications.js';
+        import { logger } from '/comisionamiento/js/core/logger.js';
         
-        // Resto del código...
+        async function loadDashboard() {
+            try {
+                await initStorage();
+                
+                // Cargar progreso
+                const electricalProgress = await getChecklistProgress('electrical');
+                const instrumentProgress = await getChecklistProgress('instrumentation');
+                
+                updateCircularProgress('electricalProgress', electricalProgress.percent);
+                document.getElementById('electricalPercent').textContent = electricalProgress.percent;
+                document.getElementById('electricalCompleted').textContent = electricalProgress.completed;
+                document.getElementById('electricalTotal').textContent = electricalProgress.total;
+                
+                updateCircularProgress('instrumentProgress', instrumentProgress.percent);
+                document.getElementById('instrumentPercent').textContent = instrumentProgress.percent;
+                document.getElementById('instrumentCompleted').textContent = instrumentProgress.completed;
+                document.getElementById('instrumentTotal').textContent = instrumentProgress.total;
+                
+                // Cargar punchlist
+                const summary = await getPunchlistSummary();
+                document.getElementById('highCount').textContent = summary.high;
+                document.getElementById('mediumCount').textContent = summary.medium;
+                document.getElementById('lowCount').textContent = summary.low;
+                document.getElementById('totalPendings').textContent = summary.total;
+                
+                const badge = document.getElementById('punchlistBadge');
+                if (badge) badge.textContent = summary.total;
+                
+                // Cargar observaciones recientes
+                const observations = await getRecentObservations(5);
+                const container = document.getElementById('recentObservations');
+                
+                if (observations.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">No hay observaciones recientes</p>';
+                } else {
+                    container.innerHTML = observations.map(obs => `
+                        <div class="observation-item priority-${obs.priority}">
+                            <span class="observation-category">${obs.category === 'electrical' ? '⚡ Eléctrico' : '📟 Instrumentación'}</span>
+                            <span class="observation-text">${escapeHtml(obs.text.substring(0, 80))}${obs.text.length > 80 ? '...' : ''}</span>
+                            <span class="observation-status ${obs.status}">${getStatusText(obs.status)}</span>
+                        </div>
+                    `).join('');
+                }
+                
+                logger.info('Dashboard cargado correctamente');
+            } catch (error) {
+                logger.error('Error cargando dashboard:', error);
+                notifications.error('Error al cargar los datos');
+            }
+        }
+        
+        function getStatusText(status) {
+            const statusMap = {
+                pending: 'Pendiente',
+                'in-progress': 'En Proceso',
+                resolved: 'Resuelto'
+            };
+            return statusMap[status] || status;
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // Sincronización manual
+        document.getElementById('syncBtn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('syncBtn');
+            btn.classList.add('syncing');
+            await loadDashboard();
+            notifications.success('Datos sincronizados');
+            setTimeout(() => btn.classList.remove('syncing'), 500);
+        });
+        
+        // Inicializar
         initTheme();
         initSidebar();
         registerSW();
+        loadDashboard();
+        
+        // Mostrar mensaje de bienvenida
+        setTimeout(() => {
+            if (themeManager.isDark()) {
+                notifications.info('⚡ Modo Jarvis activado');
+            } else {
+                notifications.info('💡 Modo claro activado');
+            }
+        }, 1000);
     </script>
 </body>
 </html>
