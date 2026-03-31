@@ -5,37 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Portal Proveedor - Comisionamiento PWA</title>
     
-    <!-- CSS Core -->
     <link rel="stylesheet" href="/comisionamiento/css/variables.css">
-    <link rel="stylesheet" href="/comisionamiento/css/core/reset.css">
-    <link rel="stylesheet" href="/comisionamiento/css/core/utilities.css">
-    
-    <!-- CSS Layout -->
-    <link rel="stylesheet" href="/comisionamiento/css/layout/grid.css">
-    <link rel="stylesheet" href="/comisionamiento/css/layout/sidebar.css">
-    <link rel="stylesheet" href="/comisionamiento/css/layout/header.css">
-    
-    <!-- CSS Components -->
-    <link rel="stylesheet" href="/comisionamiento/css/components/buttons.css">
-    <link rel="stylesheet" href="/comisionamiento/css/components/cards.css">
-    <link rel="stylesheet" href="/comisionamiento/css/components/forms.css">
-    <link rel="stylesheet" href="/comisionamiento/css/components/modals.css">
-    <link rel="stylesheet" href="/comisionamiento/css/components/animations.css">
+    <link rel="stylesheet" href="/comisionamiento/css/reset.css">
+    <link rel="stylesheet" href="/comisionamiento/css/utilities.css">
+    <link rel="stylesheet" href="/comisionamiento/css/buttons.css">
+    <link rel="stylesheet" href="/comisionamiento/css/cards.css">
+    <link rel="stylesheet" href="/comisionamiento/css/forms.css">
+    <link rel="stylesheet" href="/comisionamiento/css/modals.css">
     
     <style>
         body { background: var(--bg-primary); min-height: 100vh; padding: 2rem; }
-        .subcontractor-container { max-width: 1200px; margin: 0 auto; }
-        .file-upload-area { border: 2px dashed var(--border-color); border-radius: var(--radius-lg); padding: 2rem; text-align: center; cursor: pointer; transition: all var(--transition-fast); margin-bottom: 1rem; }
+        .subcontractor-container { max-width: 1400px; margin: 0 auto; }
+        
+        /* Layout de dos columnas */
+        .two-columns { display: flex; gap: 2rem; }
+        .sidebar-left { width: 380px; flex-shrink: 0; }
+        .main-right { flex: 1; }
+        
+        /* Lista de checklists */
+        .checklist-card { 
+            background: var(--bg-secondary); 
+            border-radius: var(--radius-lg); 
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+        .checklist-card:hover { transform: translateX(4px); border-color: var(--primary-500); }
+        .checklist-card.selected { border-color: var(--primary-500); background: var(--bg-primary); }
+        .checklist-card.pending { border-left: 4px solid #f59e0b; }
+        .checklist-card.completed { border-left: 4px solid #10b981; }
+        .checklist-card.exported { border-left: 4px solid #3b82f6; opacity: 0.7; }
+        
+        .badge-status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 500; }
+        .badge-pending { background: #f59e0b; color: white; }
+        .badge-completed { background: #10b981; color: white; }
+        .badge-exported { background: #3b82f6; color: white; }
+        .badge-prorroga { background: #ef4444; color: white; }
+        
+        .file-upload-area { border: 2px dashed var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center; cursor: pointer; transition: all var(--transition-fast); margin-bottom: 1rem; }
         .file-upload-area:hover { border-color: var(--primary-500); background: var(--bg-secondary); }
-        [data-theme="dark"] .file-upload-area:hover { border-color: var(--accent-neon); }
+        
         .checklist-item { display: flex; align-items: flex-start; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--border-color); }
         .checklist-item:hover { background: var(--bg-secondary); }
         .badge-critical { background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 0.5rem; }
         .progress-bar-container { height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; }
         .progress-bar-fill { height: 100%; background: var(--primary-500); transition: width 0.3s; }
-        [data-theme="dark"] .progress-bar-fill { background: var(--accent-neon); }
+        
         .form-section { background: var(--bg-secondary); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid var(--border-color); }
         .prorroga-option { background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 1rem; margin-top: 1rem; border-radius: var(--radius-md); }
+        
+        .selection-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        
+        @media (max-width: 1024px) {
+            .two-columns { flex-direction: column; }
+            .sidebar-left { width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -43,222 +69,401 @@
         <!-- Header -->
         <div class="text-center mb-4">
             <h1 class="text-2xl font-bold">📋 Portal Proveedor (Instalador)</h1>
-            <p class="text-muted">Genere su reporte de avance y envíelo al contratista general</p>
+            <p class="text-muted">Gestione múltiples checklists por proyecto, etapa y sistema</p>
         </div>
         
-        <!-- Paso 1: Datos del Proveedor -->
-        <div class="form-section">
-            <h3>🔐 1. Datos del Proveedor</h3>
-            <div class="grid grid-cols-2 gap-3 mt-3">
-                <div class="form-group">
-                    <label>ID del Proveedor *</label>
-                    <input type="text" id="proveedorId" class="form-input" placeholder="Ej: CTR-XXXXXX-XXXX">
+        <div class="two-columns">
+            <!-- COLUMNA IZQUIERDA: Lista de checklists -->
+            <div class="sidebar-left">
+                <div class="form-section">
+                    <h3>📋 Mis Checklists</h3>
+                    <div id="checklistsList" class="mt-3" style="max-height: 500px; overflow-y: auto;">
+                        <p class="text-center text-muted">No hay checklists guardados</p>
+                    </div>
+                    
+                    <div class="selection-actions">
+                        <button id="nuevoChecklistBtn" class="btn-primary btn-sm flex-1">➕ Nuevo Checklist</button>
+                        <button id="exportarSeleccionadosBtn" class="btn-outline btn-sm" disabled>📤 Exportar Seleccionados</button>
+                    </div>
+                    <div class="selection-actions mt-2">
+                        <button id="exportarTodosBtn" class="btn-outline btn-sm flex-1">📤 Exportar Todos</button>
+                        <button id="eliminarSeleccionadosBtn" class="btn-danger btn-sm flex-1" disabled>🗑️ Eliminar</button>
+                    </div>
+                    
+                    <div id="statsPanel" class="mt-3 p-3 bg-tertiary rounded-lg">
+                        <div class="flex-between">
+                            <span>Total:</span>
+                            <strong id="statsTotal">0</strong>
+                        </div>
+                        <div class="flex-between">
+                            <span>Pendientes:</span>
+                            <strong id="statsPending">0</strong>
+                        </div>
+                        <div class="flex-between">
+                            <span>Completados:</span>
+                            <strong id="statsCompleted">0</strong>
+                        </div>
+                        <div class="progress-bar-container mt-2">
+                            <div class="progress-bar-fill" id="statsProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="text-center text-sm mt-1" id="statsPercent">0% completado</div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Clave de Licencia *</label>
-                    <input type="text" id="licenciaKey" class="form-input" placeholder="COM-XXXXXX-XXXXXX">
-                </div>
-                <div class="form-group">
-                    <label>Nombre de la Empresa *</label>
-                    <input type="text" id="proveedorNombre" class="form-input" placeholder="Nombre de la empresa">
-                </div>
-                <div class="form-group">
-                    <label>Persona de Contacto</label>
-                    <input type="text" id="proveedorContacto" class="form-input" placeholder="Nombre del responsable">
-                </div>
-                <div class="form-group">
-                    <label>Email de Contacto</label>
-                    <input type="email" id="proveedorEmail" class="form-input" placeholder="correo@empresa.com">
-                </div>
-                <div class="form-group">
-                    <label>Teléfono</label>
-                    <input type="tel" id="proveedorTelefono" class="form-input" placeholder="55 1234 5678">
-                </div>
-            </div>
-            <button id="generarIdBtn" class="btn-outline mt-2">🎫 Generar ID y Licencia</button>
-        </div>
-        
-        <!-- Paso 2: Datos del Proyecto y Etapa -->
-        <div class="form-section">
-            <h3>📁 2. Datos del Proyecto</h3>
-            <div class="grid grid-cols-2 gap-3 mt-3">
-                <div class="form-group">
-                    <label>ID del Proyecto *</label>
-                    <input type="text" id="proyectoId" class="form-input" placeholder="PROJ-001">
-                </div>
-                <div class="form-group">
-                    <label>Nombre del Proyecto *</label>
-                    <input type="text" id="proyectoNombre" class="form-input" placeholder="Nombre del proyecto">
-                </div>
-                <div class="form-group">
-                    <label>Cliente *</label>
-                    <input type="text" id="proyectoCliente" class="form-input" placeholder="Nombre del cliente">
-                </div>
-                <div class="form-group">
-                    <label>Ubicación</label>
-                    <input type="text" id="proyectoUbicacion" class="form-input" placeholder="Ciudad, Estado">
+                
+                <!-- Importar archivo existente -->
+                <div class="form-section">
+                    <h3>📥 Importar trabajo previo</h3>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <div style="font-size: 2rem;">📁</div>
+                        <p>Arrastre o haga clic para recuperar trabajo guardado</p>
+                        <input type="file" id="fileInput" accept=".json" style="display: none;">
+                    </div>
+                    <div id="importStatus" class="mt-2" style="display: none;"></div>
                 </div>
             </div>
             
-            <h3 class="mt-4">⏳ 3. Etapa del Proyecto</h3>
-            <div class="grid grid-cols-2 gap-3 mt-3">
-                <div class="form-group">
-                    <label>Etapa *</label>
-                    <select id="etapaId" class="form-select">
-                        <option value="pre-comisionamiento">Pre-comisionamiento</option>
-                        <option value="comisionamiento-frio">Comisionamiento en Frío</option>
-                        <option value="comisionamiento-caliente">Comisionamiento en Caliente</option>
-                        <option value="pruebas-funcionales">Pruebas Funcionales</option>
-                        <option value="aceptacion">Aceptación y Entrega</option>
-                    </select>
+            <!-- COLUMNA DERECHA: Editor de checklist (se muestra al seleccionar uno) -->
+            <div class="main-right">
+                <div id="editorPanel" style="display: none;">
+                    <!-- Datos del Proveedor -->
+                    <div class="form-section">
+                        <h3>🔐 Datos del Proveedor</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="form-group">
+                                <label>ID del Proveedor *</label>
+                                <input type="text" id="proveedorId" class="form-input" placeholder="CTR-XXXXXX-XXXX">
+                            </div>
+                            <div class="form-group">
+                                <label>Clave de Licencia *</label>
+                                <input type="text" id="licenciaKey" class="form-input" placeholder="COM-XXXXXX-XXXXXX">
+                            </div>
+                            <div class="form-group">
+                                <label>Nombre de la Empresa *</label>
+                                <input type="text" id="proveedorNombre" class="form-input" placeholder="Nombre de la empresa">
+                            </div>
+                            <div class="form-group">
+                                <label>Persona de Contacto</label>
+                                <input type="text" id="proveedorContacto" class="form-input" placeholder="Nombre del responsable">
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="proveedorEmail" class="form-input" placeholder="correo@empresa.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono</label>
+                                <input type="tel" id="proveedorTelefono" class="form-input" placeholder="55 1234 5678">
+                            </div>
+                        </div>
+                        <button id="generarIdBtn" class="btn-outline mt-2">🎫 Generar ID y Licencia</button>
+                    </div>
+                    
+                    <!-- Datos del Proyecto y Etapa -->
+                    <div class="form-section">
+                        <h3>📁 Proyecto y Etapa</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="form-group">
+                                <label>ID del Proyecto *</label>
+                                <input type="text" id="proyectoId" class="form-input" placeholder="PROJ-001">
+                            </div>
+                            <div class="form-group">
+                                <label>Nombre del Proyecto *</label>
+                                <input type="text" id="proyectoNombre" class="form-input" placeholder="Nombre del proyecto">
+                            </div>
+                            <div class="form-group">
+                                <label>Cliente *</label>
+                                <input type="text" id="proyectoCliente" class="form-input" placeholder="Nombre del cliente">
+                            </div>
+                            <div class="form-group">
+                                <label>Ubicación</label>
+                                <input type="text" id="proyectoUbicacion" class="form-input" placeholder="Ciudad, Estado">
+                            </div>
+                            <div class="form-group">
+                                <label>Etapa *</label>
+                                <select id="etapaId" class="form-select">
+                                    <option value="pre-comisionamiento">Pre-comisionamiento</option>
+                                    <option value="comisionamiento-frio">Comisionamiento en Frío</option>
+                                    <option value="comisionamiento-caliente">Comisionamiento en Caliente</option>
+                                    <option value="pruebas-funcionales">Pruebas Funcionales</option>
+                                    <option value="aceptacion">Aceptación y Entrega</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha Fin Programada</label>
+                                <input type="date" id="etapaFechaFinProgramada" class="form-input">
+                            </div>
+                        </div>
+                        
+                        <!-- Opción de Prórroga -->
+                        <div class="prorroga-option mt-3">
+                            <label class="flex align-center gap-2">
+                                <input type="checkbox" id="isProrrogaCheckbox">
+                                <span>📅 Marcar como PRÓRROGA</span>
+                            </label>
+                            <div id="prorrogaMotivoDiv" style="display: none;" class="mt-2">
+                                <label>Motivo de la prórroga *</label>
+                                <textarea id="prorrogaMotivo" rows="2" class="form-textarea" placeholder="Ej: Retraso en entrega de materiales..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sistema/Equipo -->
+                    <div class="form-section">
+                        <h3>🔧 Sistema / Equipo</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="form-group">
+                                <label>Tipo de Sistema *</label>
+                                <select id="sistemaTipo" class="form-select">
+                                    <option value="electrical">⚡ Eléctrico</option>
+                                    <option value="instrumentation">📟 Instrumentación</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Sistema / Equipo *</label>
+                                <select id="sistemaId" class="form-select">
+                                    <optgroup label="Sistemas Eléctricos">
+                                        <option value="tablero-media-tension">Tablero de Media Tensión</option>
+                                        <option value="tablero-baja-tension">Tablero de Baja Tensión</option>
+                                        <option value="motor-electrico">Motor Eléctrico</option>
+                                        <option value="vfd-variador">Variador de Frecuencia (VFD)</option>
+                                    </optgroup>
+                                    <optgroup label="Sistemas de Instrumentación">
+                                        <option value="transmisor-presion">Transmisor de Presión</option>
+                                        <option value="transmisor-temperatura">Transmisor de Temperatura</option>
+                                        <option value="valvula-control">Válvula de Control</option>
+                                        <option value="plc-dcs">PLC/DCS</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Identificador del Equipo</label>
+                                <input type="text" id="sistemaIdentificador" class="form-input" placeholder="Ej: TB-01, MTR-101">
+                            </div>
+                            <div class="form-group">
+                                <label>Ubicación</label>
+                                <input type="text" id="sistemaUbicacion" class="form-input" placeholder="Sala eléctrica, Área de proceso">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Checklist -->
+                    <div class="form-section">
+                        <h3>✅ Checklist de Comisionamiento</h3>
+                        <div id="checklistContainer" class="mt-3"></div>
+                        <div class="mt-4">
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="checklistProgress" style="width: 0%"></div>
+                            </div>
+                            <div class="text-center mt-2">
+                                <span id="progressText">0% completado</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones de acción del editor -->
+                    <div class="flex gap-2 mb-4">
+                        <button id="guardarChecklistBtn" class="btn-primary flex-1">💾 Guardar Checklist</button>
+                        <button id="exportarChecklistBtn" class="btn-outline flex-1">📤 Exportar Este Checklist</button>
+                        <button id="cancelarEdicionBtn" class="btn-outline">✕ Cancelar</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Fecha Inicio Programada</label>
-                    <input type="date" id="etapaFechaInicio" class="form-input">
+                
+                <!-- Mensaje cuando no hay selección -->
+                <div id="noSelectionPanel" class="text-center p-5 bg-secondary rounded-lg">
+                    <div style="font-size: 4rem;">📋</div>
+                    <h3 class="mt-3">Seleccione o cree un checklist</h3>
+                    <p class="text-muted">Haga clic en "+ Nuevo Checklist" o seleccione uno de la lista</p>
+                    <button id="nuevoChecklistDesdeVacioBtn" class="btn-primary mt-3">➕ Crear Nuevo Checklist</button>
                 </div>
-                <div class="form-group">
-                    <label>Fecha Fin Programada</label>
-                    <input type="date" id="etapaFechaFinProgramada" class="form-input">
-                </div>
-            </div>
-            
-            <!-- Opción de Prórroga -->
-            <div class="prorroga-option mt-3">
-                <label class="flex align-center gap-2">
-                    <input type="checkbox" id="isProrrogaCheckbox">
-                    <span>📅 Marcar como PRÓRROGA (trabajo fuera de tiempo planeado)</span>
-                </label>
-                <div id="prorrogaMotivoDiv" style="display: none;" class="mt-2">
-                    <label>Motivo de la prórroga *</label>
-                    <textarea id="prorrogaMotivo" rows="2" class="form-textarea" placeholder="Ej: Retraso en entrega de materiales críticos, condiciones climáticas, disponibilidad de personal..."></textarea>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Paso 3: Sistema/Equipo -->
-        <div class="form-section">
-            <h3>🔧 4. Sistema / Equipo</h3>
-            <div class="grid grid-cols-2 gap-3 mt-3">
-                <div class="form-group">
-                    <label>Tipo de Sistema *</label>
-                    <select id="sistemaTipo" class="form-select">
-                        <option value="electrical">⚡ Eléctrico</option>
-                        <option value="instrumentation">📟 Instrumentación</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Sistema / Equipo *</label>
-                    <select id="sistemaId" class="form-select">
-                        <optgroup label="Sistemas Eléctricos">
-                            <option value="tablero-media-tension">Tablero de Media Tensión</option>
-                            <option value="tablero-baja-tension">Tablero de Baja Tensión</option>
-                            <option value="motor-electrico">Motor Eléctrico</option>
-                            <option value="vfd-variador">Variador de Frecuencia (VFD)</option>
-                        </optgroup>
-                        <optgroup label="Sistemas de Instrumentación">
-                            <option value="transmisor-presion">Transmisor de Presión</option>
-                            <option value="transmisor-temperatura">Transmisor de Temperatura</option>
-                            <option value="valvula-control">Válvula de Control</option>
-                            <option value="plc-dcs">PLC/DCS</option>
-                        </optgroup>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Identificador del Equipo</label>
-                    <input type="text" id="sistemaIdentificador" class="form-input" placeholder="Ej: TB-01, MTR-101, VFD-002">
-                </div>
-                <div class="form-group">
-                    <label>Ubicación del Equipo</label>
-                    <input type="text" id="sistemaUbicacion" class="form-input" placeholder="Sala eléctrica, Área de proceso, etc.">
-                </div>
-            </div>
-        </div>
-        
-        <!-- Paso 4: Checklist (se carga dinámicamente) -->
-        <div id="checklistSection" class="form-section">
-            <h3>✅ 5. Checklist de Comisionamiento</h3>
-            <div id="checklistContainer" class="mt-3"></div>
-            <div class="mt-4">
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" id="checklistProgress" style="width: 0%"></div>
-                </div>
-                <div class="text-center mt-2">
-                    <span id="progressText">0% completado</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Paso 5: Exportar -->
-        <div class="form-section">
-            <h3>📤 6. Exportar Reporte</h3>
-            <p class="text-muted">Genere el archivo JSON para enviar al contratista general</p>
-            <div class="btn-group mt-3">
-                <button id="exportarReporteBtn" class="btn-primary">📄 Exportar Reporte JSON</button>
-            </div>
-            <div id="exportInfo" class="mt-3" style="display: none;">
-                <div class="alert alert-success">✅ Reporte generado. Envíe este archivo al contratista general.</div>
             </div>
         </div>
         
         <div class="text-center text-sm text-muted mt-4">
-            <p>Comisionamiento PWA v2.0 - Sistema de gestión de comisionamiento</p>
+            <p>Comisionamiento PWA v2.0 - Gestione múltiples checklists por proyecto, etapa y sistema</p>
         </div>
     </div>
     
     <script type="module">
         import { initTheme } from '/comisionamiento/js/core/theme.js';
-        import { getChecklistItemsBySystem, getAvailableSystems } from '/comisionamiento/js/features/checklist/items-data.js';
+        import { getChecklistItemsBySystem } from '/comisionamiento/js/features/checklist/items-data.js';
+        import { proveedorStorage } from '/comisionamiento/js/services/proveedor-storage.js';
         import { notifications } from '/comisionamiento/js/services/notifications.js';
         
+        let currentChecklistId = null;
         let currentChecklistItems = [];
+        let selectedChecklistIds = new Set();
         
-        // Generar ID y Licencia
-        document.getElementById('generarIdBtn')?.addEventListener('click', () => {
-            const nombre = document.getElementById('proveedorNombre').value || 'Proveedor';
-            const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-            const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        
+        async function init() {
+            await proveedorStorage.init();
+            await renderChecklistsList();
+            setupEventListeners();
+            setupFileUpload();
             
-            document.getElementById('proveedorId').value = id;
-            document.getElementById('licenciaKey').value = licencia;
-            
-            notifications.success('ID y Licencia generados');
-        });
-        
-        // Prórroga checkbox
-        const isProrrogaCheckbox = document.getElementById('isProrrogaCheckbox');
-        const prorrogaMotivoDiv = document.getElementById('prorrogaMotivoDiv');
-        
-        isProrrogaCheckbox?.addEventListener('change', (e) => {
-            prorrogaMotivoDiv.style.display = e.target.checked ? 'block' : 'none';
-        });
-        
-        // Cambio de sistema - cargar checklist
-        const sistemaSelect = document.getElementById('sistemaId');
-        const sistemaTipo = document.getElementById('sistemaTipo');
-        
-        function cargarChecklist() {
-            const systemId = sistemaSelect.value;
-            const systemData = getChecklistItemsBySystem(systemId);
-            
-            if (!systemData) {
-                document.getElementById('checklistContainer').innerHTML = '<p class="text-center text-muted">Seleccione un sistema/equipo</p>';
-                return;
+            // Verificar si hay parámetro para nuevo checklist
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'new') {
+                crearNuevoChecklist();
             }
-            
-            currentChecklistItems = systemData.items.map(item => ({
-                ...item,
-                completed: false,
-                notes: ''
-            }));
-            
-            renderChecklist();
         }
         
-        function renderChecklist() {
+        // ============================================
+        // RENDERIZAR LISTA DE CHECKLISTS
+        // ============================================
+        
+        async function renderChecklistsList() {
+            const checklists = proveedorStorage.getAllChecklists();
+            const container = document.getElementById('checklistsList');
+            
+            if (checklists.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No hay checklists guardados</p>';
+            } else {
+                container.innerHTML = checklists.map(c => `
+                    <div class="checklist-card ${c.status} ${selectedChecklistIds.has(c.id) ? 'selected' : ''}" data-id="${c.id}">
+                        <div class="flex-between">
+                            <div>
+                                <strong>${c.sistema?.nombre || 'Sistema'}</strong>
+                                <span class="badge-status badge-${c.status} ml-2">${getStatusText(c.status)}</span>
+                                ${c.metadata?.isProrroga ? '<span class="badge-status badge-prorroga ml-2">📅 Prórroga</span>' : ''}
+                            </div>
+                            <input type="checkbox" class="checklist-select" data-id="${c.id}" ${selectedChecklistIds.has(c.id) ? 'checked' : ''}>
+                        </div>
+                        <div class="text-sm text-muted mt-1">
+                            ${c.proyecto?.nombre || 'Proyecto'} | ${c.etapa?.nombre || 'Etapa'}
+                        </div>
+                        <div class="text-sm mt-1">
+                            ${c.sistema?.identificador ? `📌 ${c.sistema.identificador}` : ''}
+                            ${c.sistema?.ubicacion ? ` | 📍 ${c.sistema.ubicacion}` : ''}
+                        </div>
+                        <div class="flex-between mt-2">
+                            <div class="progress-small" style="width: 100px;">
+                                <div class="progress-small-fill" style="width: ${c.estadisticas?.porcentaje || 0}%; height: 4px;"></div>
+                            </div>
+                            <span class="text-xs">${c.estadisticas?.porcentaje || 0}%</span>
+                        </div>
+                        <div class="text-xs text-muted mt-1">
+                            ${c.updatedAt ? `📅 ${new Date(c.updatedAt).toLocaleDateString()}` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Actualizar estadísticas
+            const stats = proveedorStorage.getStats();
+            document.getElementById('statsTotal').textContent = stats.total;
+            document.getElementById('statsPending').textContent = stats.pending;
+            document.getElementById('statsCompleted').textContent = stats.completed;
+            document.getElementById('statsProgress').style.width = `${stats.overallProgress}%`;
+            document.getElementById('statsPercent').textContent = `${stats.overallProgress}% completado`;
+            
+            // Actualizar botones de selección
+            const hasSelection = selectedChecklistIds.size > 0;
+            document.getElementById('exportarSeleccionadosBtn').disabled = !hasSelection;
+            document.getElementById('eliminarSeleccionadosBtn').disabled = !hasSelection;
+            
+            // Eventos de selección
+            document.querySelectorAll('.checklist-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (e.target.type !== 'checkbox') {
+                        const id = card.dataset.id;
+                        seleccionarChecklist(id);
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.checklist-select').forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    e.stopPropagation();
+                    const id = cb.dataset.id;
+                    if (cb.checked) {
+                        selectedChecklistIds.add(id);
+                    } else {
+                        selectedChecklistIds.delete(id);
+                    }
+                    renderChecklistsList();
+                });
+            });
+        }
+        
+        function getStatusText(status) {
+            const statusMap = {
+                pending: 'Pendiente',
+                completed: 'Completado',
+                exported: 'Exportado'
+            };
+            return statusMap[status] || status;
+        }
+        
+        async function seleccionarChecklist(id) {
+            const checklist = await proveedorStorage.getChecklist(id);
+            if (!checklist) return;
+            
+            currentChecklistId = id;
+            cargarChecklistEnEditor(checklist);
+            
+            document.getElementById('editorPanel').style.display = 'block';
+            document.getElementById('noSelectionPanel').style.display = 'none';
+        }
+        
+        function cargarChecklistEnEditor(checklist) {
+            // Cargar datos del proveedor
+            document.getElementById('proveedorId').value = checklist.proveedor?.id || '';
+            document.getElementById('licenciaKey').value = checklist.proveedor?.licencia || '';
+            document.getElementById('proveedorNombre').value = checklist.proveedor?.nombre || '';
+            document.getElementById('proveedorContacto').value = checklist.proveedor?.contacto || '';
+            document.getElementById('proveedorEmail').value = checklist.proveedor?.email || '';
+            document.getElementById('proveedorTelefono').value = checklist.proveedor?.telefono || '';
+            
+            // Cargar proyecto y etapa
+            document.getElementById('proyectoId').value = checklist.proyecto?.id || '';
+            document.getElementById('proyectoNombre').value = checklist.proyecto?.nombre || '';
+            document.getElementById('proyectoCliente').value = checklist.proyecto?.cliente || '';
+            document.getElementById('proyectoUbicacion').value = checklist.proyecto?.ubicacion || '';
+            document.getElementById('etapaId').value = checklist.etapa?.id || 'pre-comisionamiento';
+            document.getElementById('etapaFechaFinProgramada').value = checklist.etapa?.fechaFinProgramada || '';
+            
+            // Cargar prórroga
+            const isProrroga = checklist.metadata?.isProrroga || false;
+            document.getElementById('isProrrogaCheckbox').checked = isProrroga;
+            document.getElementById('prorrogaMotivoDiv').style.display = isProrroga ? 'block' : 'none';
+            document.getElementById('prorrogaMotivo').value = checklist.metadata?.prorrogaMotivo || '';
+            
+            // Cargar sistema
+            document.getElementById('sistemaTipo').value = checklist.sistema?.tipo || 'electrical';
+            document.getElementById('sistemaId').value = checklist.sistema?.id || 'tablero-media-tension';
+            document.getElementById('sistemaIdentificador').value = checklist.sistema?.identificador || '';
+            document.getElementById('sistemaUbicacion').value = checklist.sistema?.ubicacion || '';
+            
+            // Cargar checklist items
+            const sistemaData = getChecklistItemsBySystem(checklist.sistema?.id);
+            if (sistemaData) {
+                currentChecklistItems = sistemaData.items.map(item => {
+                    const savedItem = checklist.checklist?.[checklist.sistema?.tipo]?.find(i => i.id === item.id);
+                    return {
+                        ...item,
+                        completed: savedItem?.completed || false,
+                        notes: savedItem?.notes || ''
+                    };
+                });
+                renderChecklistEditor();
+            }
+        }
+        
+        function renderChecklistEditor() {
             const container = document.getElementById('checklistContainer');
             if (!container) return;
             
-            let html = `<h4 class="mb-3">📋 ${getSystemName(sistemaSelect.value)}</h4>`;
+            const sistemaId = document.getElementById('sistemaId').value;
+            const sistemaData = getChecklistItemsBySystem(sistemaId);
+            
+            if (!sistemaData) {
+                container.innerHTML = '<p class="text-center text-muted">Seleccione un sistema/equipo</p>';
+                return;
+            }
+            
+            let html = `<h4 class="mb-3">📋 ${sistemaData.nombre}</h4>`;
             
             currentChecklistItems.forEach(item => {
                 html += `
@@ -292,7 +497,7 @@
                         item.notes = notes;
                     }
                     
-                    updateProgress();
+                    updateEditorProgress();
                 });
             });
             
@@ -314,10 +519,10 @@
                 });
             });
             
-            updateProgress();
+            updateEditorProgress();
         }
         
-        function updateProgress() {
+        function updateEditorProgress() {
             const total = currentChecklistItems.length;
             const completed = currentChecklistItems.filter(i => i.completed).length;
             const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -328,6 +533,336 @@
             if (progressFill) progressFill.style.width = `${percent}%`;
             if (progressText) progressText.textContent = `${percent}% completado (${completed}/${total})`;
         }
+        
+        // ============================================
+        // CREAR NUEVO CHECKLIST
+        // ============================================
+        
+        async function crearNuevoChecklist() {
+            // Limpiar formulario
+            document.getElementById('proveedorId').value = '';
+            document.getElementById('licenciaKey').value = '';
+            document.getElementById('proveedorNombre').value = '';
+            document.getElementById('proveedorContacto').value = '';
+            document.getElementById('proveedorEmail').value = '';
+            document.getElementById('proveedorTelefono').value = '';
+            document.getElementById('proyectoId').value = '';
+            document.getElementById('proyectoNombre').value = '';
+            document.getElementById('proyectoCliente').value = '';
+            document.getElementById('proyectoUbicacion').value = '';
+            document.getElementById('etapaId').value = 'pre-comisionamiento';
+            document.getElementById('etapaFechaFinProgramada').value = '';
+            document.getElementById('isProrrogaCheckbox').checked = false;
+            document.getElementById('prorrogaMotivoDiv').style.display = 'none';
+            document.getElementById('prorrogaMotivo').value = '';
+            document.getElementById('sistemaTipo').value = 'electrical';
+            document.getElementById('sistemaId').value = 'tablero-media-tension';
+            document.getElementById('sistemaIdentificador').value = '';
+            document.getElementById('sistemaUbicacion').value = '';
+            
+            // Inicializar checklist items
+            const sistemaData = getChecklistItemsBySystem('tablero-media-tension');
+            if (sistemaData) {
+                currentChecklistItems = sistemaData.items.map(item => ({
+                    ...item,
+                    completed: false,
+                    notes: ''
+                }));
+                renderChecklistEditor();
+            }
+            
+            currentChecklistId = null;
+            document.getElementById('editorPanel').style.display = 'block';
+            document.getElementById('noSelectionPanel').style.display = 'none';
+            
+            notifications.info('Complete los datos y guarde el checklist');
+        }
+        
+        // ============================================
+        // GUARDAR CHECKLIST
+        // ============================================
+        
+        async function guardarChecklist() {
+            // Validar campos obligatorios
+            const proveedorId = document.getElementById('proveedorId').value.trim();
+            const licenciaKey = document.getElementById('licenciaKey').value.trim();
+            const proveedorNombre = document.getElementById('proveedorNombre').value.trim();
+            const proyectoId = document.getElementById('proyectoId').value.trim();
+            const proyectoNombre = document.getElementById('proyectoNombre').value.trim();
+            const proyectoCliente = document.getElementById('proyectoCliente').value.trim();
+            
+            if (!proveedorId || !licenciaKey || !proveedorNombre || !proyectoId || !proyectoNombre || !proyectoCliente) {
+                notifications.warning('Complete todos los campos obligatorios (*)');
+                return;
+            }
+            
+            const isProrroga = document.getElementById('isProrrogaCheckbox').checked;
+            const prorrogaMotivo = isProrroga ? document.getElementById('prorrogaMotivo').value.trim() : null;
+            
+            if (isProrroga && !prorrogaMotivo) {
+                notifications.warning('Ingrese el motivo de la prórroga');
+                return;
+            }
+            
+            // Calcular estadísticas
+            const totalItems = currentChecklistItems.length;
+            const completados = currentChecklistItems.filter(i => i.completed).length;
+            const criticosPendientes = currentChecklistItems.filter(i => i.critical && !i.completed).length;
+            const porcentaje = totalItems > 0 ? Math.round((completados / totalItems) * 100) : 0;
+            
+            const checklistData = {
+                proveedor: {
+                    id: proveedorId,
+                    nombre: proveedorNombre,
+                    licencia: licenciaKey,
+                    contacto: document.getElementById('proveedorContacto').value,
+                    email: document.getElementById('proveedorEmail').value,
+                    telefono: document.getElementById('proveedorTelefono').value
+                },
+                proyecto: {
+                    id: proyectoId,
+                    nombre: proyectoNombre,
+                    cliente: proyectoCliente,
+                    ubicacion: document.getElementById('proyectoUbicacion').value
+                },
+                etapa: {
+                    id: document.getElementById('etapaId').value,
+                    nombre: document.getElementById('etapaId').options[document.getElementById('etapaId').selectedIndex].text,
+                    fechaFinProgramada: document.getElementById('etapaFechaFinProgramada').value
+                },
+                sistema: {
+                    id: document.getElementById('sistemaId').value,
+                    nombre: getSystemName(document.getElementById('sistemaId').value),
+                    tipo: document.getElementById('sistemaTipo').value,
+                    identificador: document.getElementById('sistemaIdentificador').value,
+                    ubicacion: document.getElementById('sistemaUbicacion').value
+                },
+                checklist: {
+                    [document.getElementById('sistemaTipo').value]: currentChecklistItems
+                },
+                estadisticas: {
+                    totalItems,
+                    completados,
+                    pendientes: totalItems - completados,
+                    porcentaje,
+                    criticosPendientes
+                },
+                metadata: {
+                    isProrroga,
+                    prorrogaMotivo
+                },
+                status: porcentaje === 100 ? 'completed' : 'pending'
+            };
+            
+            if (currentChecklistId) {
+                await proveedorStorage.updateChecklist(currentChecklistId, checklistData);
+                notifications.success('Checklist actualizado');
+            } else {
+                await proveedorStorage.addChecklist(checklistData);
+                notifications.success('Checklist guardado');
+            }
+            
+            await renderChecklistsList();
+            
+            // Si se creó nuevo, seleccionarlo
+            if (!currentChecklistId) {
+                const all = proveedorStorage.getAllChecklists();
+                if (all.length > 0) {
+                    seleccionarChecklist(all[all.length - 1].id);
+                }
+            }
+        }
+        
+        // ============================================
+        // EXPORTAR CHECKLIST
+        // ============================================
+        
+        async function exportarChecklist(id) {
+            const checklist = await proveedorStorage.getChecklist(id);
+            if (!checklist) return;
+            
+            // Construir reporte completo para enviar al cliente
+            const reporte = {
+                metadata: {
+                    version: "2.0",
+                    reportId: `RPT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+                    reportType: checklist.metadata?.isProrroga ? "prorrogado" : "progreso",
+                    generatedAt: new Date().toISOString(),
+                    isProrroga: checklist.metadata?.isProrroga || false,
+                    prorrogaMotivo: checklist.metadata?.prorrogaMotivo || null
+                },
+                proyecto: checklist.proyecto,
+                proveedor: checklist.proveedor,
+                etapa: checklist.etapa,
+                sistema: checklist.sistema,
+                checklist: checklist.checklist,
+                estadisticas: checklist.estadisticas
+            };
+            
+            const jsonStr = JSON.stringify(reporte, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `reporte-${checklist.proveedor.nombre.replace(/\s/g, '-')}-${checklist.etapa.id}-${checklist.sistema.id}-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            // Marcar como exportado
+            await proveedorStorage.updateChecklist(id, { status: 'exported', lastExportedAt: new Date().toISOString() });
+            await renderChecklistsList();
+            
+            notifications.success('Reporte exportado. Envíelo al contratista general.');
+        }
+        
+        async function exportarSeleccionados() {
+            const ids = Array.from(selectedChecklistIds);
+            if (ids.length === 0) return;
+            
+            const selected = await proveedorStorage.exportMultipleChecklists(ids);
+            
+            // Exportar como archivo consolidado
+            const exportData = {
+                metadata: {
+                    version: "2.0",
+                    exportedAt: new Date().toISOString(),
+                    type: "multiple",
+                    count: selected.length
+                },
+                checklists: selected
+            };
+            
+            const jsonStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `reportes-consolidados-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            selectedChecklistIds.clear();
+            await renderChecklistsList();
+            notifications.success(`${selected.length} reportes exportados`);
+        }
+        
+        async function exportarTodos() {
+            const all = await proveedorStorage.exportAllChecklists();
+            
+            const exportData = {
+                metadata: {
+                    version: "2.0",
+                    exportedAt: new Date().toISOString(),
+                    type: "all",
+                    count: all.length
+                },
+                checklists: all
+            };
+            
+            const jsonStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `todos-los-reportes-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            await renderChecklistsList();
+            notifications.success(`${all.length} reportes exportados`);
+        }
+        
+        async function eliminarSeleccionados() {
+            const ids = Array.from(selectedChecklistIds);
+            if (ids.length === 0) return;
+            
+            if (confirm(`¿Eliminar ${ids.length} checklist(s) seleccionados?`)) {
+                for (const id of ids) {
+                    await proveedorStorage.deleteChecklist(id);
+                }
+                selectedChecklistIds.clear();
+                
+                if (currentChecklistId && ids.includes(currentChecklistId)) {
+                    currentChecklistId = null;
+                    document.getElementById('editorPanel').style.display = 'none';
+                    document.getElementById('noSelectionPanel').style.display = 'block';
+                }
+                
+                await renderChecklistsList();
+                notifications.success(`${ids.length} checklist(s) eliminados`);
+            }
+        }
+        
+        // ============================================
+        // FILE UPLOAD (Importar trabajo previo)
+        // ============================================
+        
+        function setupFileUpload() {
+            const fileUploadArea = document.getElementById('fileUploadArea');
+            const fileInput = document.getElementById('fileInput');
+            
+            fileUploadArea.addEventListener('click', () => fileInput.click());
+            
+            fileUploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUploadArea.style.borderColor = 'var(--primary-500)';
+            });
+            
+            fileUploadArea.addEventListener('dragleave', () => {
+                fileUploadArea.style.borderColor = 'var(--border-color)';
+            });
+            
+            fileUploadArea.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                fileUploadArea.style.borderColor = 'var(--border-color)';
+                const file = e.dataTransfer.files[0];
+                if (file) await importFile(file);
+            });
+            
+            fileInput.addEventListener('change', async (e) => {
+                if (e.target.files[0]) await importFile(e.target.files[0]);
+            });
+        }
+        
+        async function importFile(file) {
+            const statusDiv = document.getElementById('importStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<div class="alert alert-info">⏳ Procesando archivo...</div>';
+            
+            try {
+                const content = await file.text();
+                const data = JSON.parse(content);
+                
+                let importedCount = 0;
+                
+                if (data.metadata?.type === 'multiple' || data.metadata?.type === 'all') {
+                    // Múltiples checklists
+                    for (const checklist of data.checklists) {
+                        await proveedorStorage.addChecklist(checklist);
+                        importedCount++;
+                    }
+                } else if (data.proyecto && data.proveedor) {
+                    // Checklist individual
+                    await proveedorStorage.addChecklist(data);
+                    importedCount++;
+                } else {
+                    throw new Error('Formato de archivo no reconocido');
+                }
+                
+                await renderChecklistsList();
+                statusDiv.innerHTML = `<div class="alert alert-success">✅ ${importedCount} checklist(s) importados</div>`;
+                setTimeout(() => statusDiv.style.display = 'none', 3000);
+                notifications.success(`${importedCount} checklist(s) importados`);
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${error.message}</div>`;
+                notifications.error(error.message);
+            }
+        }
+        
+        // ============================================
+        // UTILIDADES
+        // ============================================
         
         function getSystemName(systemId) {
             const systems = {
@@ -343,99 +878,6 @@
             return systems[systemId] || systemId;
         }
         
-        // Exportar reporte
-        document.getElementById('exportarReporteBtn')?.addEventListener('click', () => {
-            // Validar campos obligatorios
-            const proveedorId = document.getElementById('proveedorId').value.trim();
-            const licenciaKey = document.getElementById('licenciaKey').value.trim();
-            const proveedorNombre = document.getElementById('proveedorNombre').value.trim();
-            const proyectoId = document.getElementById('proyectoId').value.trim();
-            const proyectoNombre = document.getElementById('proyectoNombre').value.trim();
-            const proyectoCliente = document.getElementById('proyectoCliente').value.trim();
-            const etapaId = document.getElementById('etapaId').value;
-            
-            if (!proveedorId || !licenciaKey || !proveedorNombre || !proyectoId || !proyectoNombre || !proyectoCliente) {
-                notifications.warning('Complete todos los campos obligatorios (*)');
-                return;
-            }
-            
-            const isProrroga = isProrrogaCheckbox.checked;
-            const prorrogaMotivo = isProrroga ? document.getElementById('prorrogaMotivo').value.trim() : null;
-            
-            if (isProrroga && !prorrogaMotivo) {
-                notifications.warning('Ingrese el motivo de la prórroga');
-                return;
-            }
-            
-            // Calcular estadísticas
-            const totalItems = currentChecklistItems.length;
-            const completados = currentChecklistItems.filter(i => i.completed).length;
-            const criticosPendientes = currentChecklistItems.filter(i => i.critical && !i.completed).length;
-            
-            // Construir reporte
-            const reporte = {
-                metadata: {
-                    version: "2.0",
-                    reportId: `RPT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-                    reportType: isProrroga ? "prorrogado" : "progreso",
-                    generatedAt: new Date().toISOString(),
-                    isProrroga: isProrroga,
-                    prorrogaMotivo: prorrogaMotivo
-                },
-                proyecto: {
-                    id: proyectoId,
-                    nombre: proyectoNombre,
-                    cliente: proyectoCliente,
-                    ubicacion: document.getElementById('proyectoUbicacion').value || ''
-                },
-                proveedor: {
-                    id: proveedorId,
-                    nombre: proveedorNombre,
-                    contacto: document.getElementById('proveedorContacto').value || '',
-                    email: document.getElementById('proveedorEmail').value || '',
-                    telefono: document.getElementById('proveedorTelefono').value || '',
-                    licencia: licenciaKey
-                },
-                etapa: {
-                    id: etapaId,
-                    nombre: document.getElementById('etapaId').options[document.getElementById('etapaId').selectedIndex].text,
-                    fechaInicio: document.getElementById('etapaFechaInicio').value || '',
-                    fechaFinProgramada: document.getElementById('etapaFechaFinProgramada').value || '',
-                    fechaFinReal: null
-                },
-                sistema: {
-                    id: sistemaSelect.value,
-                    nombre: getSystemName(sistemaSelect.value),
-                    tipo: document.getElementById('sistemaTipo').value,
-                    identificador: document.getElementById('sistemaIdentificador').value || '',
-                    ubicacion: document.getElementById('sistemaUbicacion').value || ''
-                },
-                checklist: {
-                    [document.getElementById('sistemaTipo').value]: currentChecklistItems
-                },
-                estadisticas: {
-                    totalItems: totalItems,
-                    completados: completados,
-                    pendientes: totalItems - completados,
-                    porcentaje: totalItems > 0 ? Math.round((completados / totalItems) * 100) : 0,
-                    criticosPendientes: criticosPendientes
-                }
-            };
-            
-            // Descargar JSON
-            const jsonStr = JSON.stringify(reporte, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `reporte-${proveedorNombre.replace(/\s/g, '-')}-${etapaId}-${sistemaSelect.value}-${Date.now()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            document.getElementById('exportInfo').style.display = 'block';
-            notifications.success('Reporte exportado. Envíelo al contratista general.');
-        });
-        
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, function(m) {
@@ -446,36 +888,51 @@
             });
         }
         
-        // Inicializar
-        sistemaSelect.addEventListener('change', cargarChecklist);
-        sistemaTipo.addEventListener('change', () => {
-            // Actualizar opciones del sistema según tipo
-            const tipo = sistemaTipo.value;
-            const electricalOptions = ['tablero-media-tension', 'tablero-baja-tension', 'motor-electrico', 'vfd-variador'];
-            const instrumentationOptions = ['transmisor-presion', 'transmisor-temperatura', 'valvula-control', 'plc-dcs'];
+        function setupEventListeners() {
+            document.getElementById('generarIdBtn')?.addEventListener('click', () => {
+                const nombre = document.getElementById('proveedorNombre').value || 'Proveedor';
+                const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+                const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+                document.getElementById('proveedorId').value = id;
+                document.getElementById('licenciaKey').value = licencia;
+                notifications.success('ID y Licencia generados');
+            });
             
-            const options = sistemaSelect.querySelectorAll('option');
-            options.forEach(opt => {
-                if (tipo === 'electrical') {
-                    opt.style.display = electricalOptions.includes(opt.value) || opt.value === '' ? '' : 'none';
-                } else {
-                    opt.style.display = instrumentationOptions.includes(opt.value) || opt.value === '' ? '' : 'none';
+            document.getElementById('isProrrogaCheckbox')?.addEventListener('change', (e) => {
+                document.getElementById('prorrogaMotivoDiv').style.display = e.target.checked ? 'block' : 'none';
+            });
+            
+            document.getElementById('sistemaId')?.addEventListener('change', () => {
+                const sistemaId = document.getElementById('sistemaId').value;
+                const sistemaData = getChecklistItemsBySystem(sistemaId);
+                if (sistemaData) {
+                    currentChecklistItems = sistemaData.items.map(item => ({
+                        ...item,
+                        completed: false,
+                        notes: ''
+                    }));
+                    renderChecklistEditor();
                 }
             });
             
-            // Seleccionar primera opción válida
-            for (let opt of options) {
-                if (opt.style.display !== 'none' && opt.value) {
-                    sistemaSelect.value = opt.value;
-                    break;
-                }
-            }
-            
-            cargarChecklist();
-        });
+            document.getElementById('guardarChecklistBtn')?.addEventListener('click', guardarChecklist);
+            document.getElementById('exportarChecklistBtn')?.addEventListener('click', () => {
+                if (currentChecklistId) exportarChecklist(currentChecklistId);
+            });
+            document.getElementById('cancelarEdicionBtn')?.addEventListener('click', () => {
+                currentChecklistId = null;
+                document.getElementById('editorPanel').style.display = 'none';
+                document.getElementById('noSelectionPanel').style.display = 'block';
+            });
+            document.getElementById('nuevoChecklistBtn')?.addEventListener('click', crearNuevoChecklist);
+            document.getElementById('nuevoChecklistDesdeVacioBtn')?.addEventListener('click', crearNuevoChecklist);
+            document.getElementById('exportarSeleccionadosBtn')?.addEventListener('click', exportarSeleccionados);
+            document.getElementById('exportarTodosBtn')?.addEventListener('click', exportarTodos);
+            document.getElementById('eliminarSeleccionadosBtn')?.addEventListener('click', eliminarSeleccionados);
+        }
         
-        cargarChecklist();
         initTheme();
+        init();
     </script>
 </body>
 </html>
