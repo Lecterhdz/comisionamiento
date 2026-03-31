@@ -380,4 +380,205 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                            y: { beginAt
+                            y: { beginAtZero: true, grid: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' } },
+                            x: { ticks: { color: isDark ? '#f1f5f9' : '#1e293b' } }
+                        },
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: isDark ? '#f1f5f9' : '#1e293b' } }
+                        }
+                    }
+                });
+            }
+            
+            // Gráfica de dona
+            const donutCtx = document.getElementById('progressDonutChart')?.getContext('2d');
+            if (donutCtx) {
+                if (charts.donut) charts.donut.destroy();
+                charts.donut = new Chart(donutCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Completado', 'Pendiente'],
+                        datasets: [{
+                            data: [consolidated.overall.completed, consolidated.overall.total - consolidated.overall.completed],
+                            backgroundColor: ['#10b981', '#ef4444'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: isDark ? '#f1f5f9' : '#1e293b' } }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function updatePunchlistChart(summary, isDark) {
+            const ctx = document.getElementById('punchlistChart')?.getContext('2d');
+            if (ctx) {
+                if (charts.punchlist) charts.punchlist.destroy();
+                charts.punchlist = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Alta', 'Media', 'Baja'],
+                        datasets: [{
+                            data: [summary.high, summary.medium, summary.low],
+                            backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: isDark ? '#f1f5f9' : '#1e293b' } }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function updateRecentObservations(observations) {
+            const container = document.getElementById('recentObservationsList');
+            if (!container) return;
+            
+            if (observations.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No hay observaciones recientes</p>';
+                return;
+            }
+            
+            container.innerHTML = observations.slice(0, 5).map(obs => `
+                <div class="observation-item mb-2 p-2" style="border-left: 3px solid ${obs.priority === 'high' ? '#ef4444' : obs.priority === 'medium' ? '#f59e0b' : '#10b981'}; background: var(--bg-secondary); border-radius: 8px;">
+                    <div class="flex-between">
+                        <span class="text-sm">${obs.category === 'electrical' ? '⚡' : '📟'}</span>
+                        <span class="text-xs text-muted">${formatters.date(obs.createdAt, 'short')}</span>
+                    </div>
+                    <div class="text-sm mt-1">${formatters.truncate(obs.text, 80)}</div>
+                </div>
+            `).join('');
+        }
+        
+        // File upload
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInput = document.getElementById('fileInput');
+        
+        fileUploadArea.addEventListener('click', () => fileInput.click());
+        
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.style.borderColor = 'var(--primary-500)';
+        });
+        
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.style.borderColor = 'var(--border-color)';
+        });
+        
+        fileUploadArea.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            fileUploadArea.style.borderColor = 'var(--border-color)';
+            const file = e.dataTransfer.files[0];
+            if (file) await processFile(file);
+        });
+        
+        fileInput.addEventListener('change', async (e) => {
+            if (e.target.files[0]) await processFile(e.target.files[0]);
+        });
+        
+        async function processFile(file) {
+            const statusDiv = document.getElementById('importStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<div class="alert alert-info">⏳ Procesando reporte...</div>';
+            
+            try {
+                const result = await importExportService.importSubcontractorReport(file);
+                statusDiv.innerHTML = `<div class="alert alert-success">✅ ${result.message}</div>`;
+                setTimeout(() => statusDiv.style.display = 'none', 3000);
+                await loadData();
+                notifications.success(result.message);
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${error.message}</div>`;
+                notifications.error(error.message);
+            }
+        }
+        
+        // Modal para nuevo subcontratista
+        const modal = document.getElementById('contractorModal');
+        
+        document.getElementById('addContractorBtn')?.addEventListener('click', () => {
+            document.getElementById('newContractorName').value = '';
+            document.getElementById('newContractorDiscipline').value = 'electrical';
+            document.getElementById('newContractorContact').value = '';
+            document.getElementById('newContractorEmail').value = '';
+            document.getElementById('newContractorPhone').value = '';
+            modal.style.display = 'flex';
+        });
+        
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', () => modal.style.display = 'none');
+        });
+        
+        document.getElementById('cancelContractorBtn')?.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+        
+        document.getElementById('saveContractorBtn')?.addEventListener('click', async () => {
+            const name = document.getElementById('newContractorName').value.trim();
+            if (!name) {
+                notifications.warning('Ingrese el nombre del contratista');
+                return;
+            }
+            
+            const contractorData = {
+                id: importExportService.generateContractorId(),
+                name: name,
+                discipline: document.getElementById('newContractorDiscipline').value,
+                licenseKey: importExportService.generateLicenseKey('GENERAL', name),
+                contactName: document.getElementById('newContractorContact').value,
+                contactEmail: document.getElementById('newContractorEmail').value,
+                contactPhone: document.getElementById('newContractorPhone').value
+            };
+            
+            const fileData = importExportService.generateSubcontractorFile(contractorData);
+            const jsonStr = JSON.stringify(fileData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `subcontratista-${contractorData.name.replace(/\s/g, '-')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            modal.style.display = 'none';
+            notifications.success(`Archivo generado para ${contractorData.name}`);
+        });
+        
+        // Exportar consolidado
+        document.getElementById('exportReportBtn')?.addEventListener('click', async () => {
+            await importExportService.exportConsolidatedReport({ format: 'json' });
+            notifications.success('Reporte consolidado exportado');
+        });
+        
+        document.getElementById('clearReportsBtn')?.addEventListener('click', async () => {
+            if (confirm('¿Eliminar TODOS los reportes de subcontratistas? Esta acción no se puede deshacer.')) {
+                await importExportService.clearAllReports();
+                await loadData();
+                notifications.success('Todos los reportes eliminados');
+            }
+        });
+        
+        // Escuchar cambios de tema
+        themeManager.onThemeChange = (isDark) => {
+            const consolidated = importExportService.getConsolidatedProgress();
+            updateCharts(consolidated, isDark);
+            const punchlistSummary = document.getElementById('punchlistChart')?.__summary;
+            if (punchlistSummary) updatePunchlistChart(punchlistSummary, isDark);
+        };
+        
+        initTheme();
+        initSidebar();
+        init();
+    </script>
+</body>
+</html>
