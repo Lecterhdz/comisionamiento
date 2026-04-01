@@ -91,14 +91,6 @@
     </style>
 </head>
 <body>
-<script type="module">
-    import { checkAccess, ROLES } from '/comisionamiento/js/core/auth.js';
-    
-    // Verificar acceso - solo proveedor
-    if (!checkAccess([ROLES.PROVEEDOR])) {
-        // checkAccess ya redirige a login o unauthorized
-    }
-</script>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     
     <aside class="sidebar" id="sidebar">
@@ -314,10 +306,11 @@
     </main>
     
     <script type="module">
-        import { validarArchivoProveedor } from '/comisionamiento/js/data/proyectos.js';
+        // NOTA: El proveedor NO necesita autenticación
+        // El acceso es directo, solo necesita importar el archivo JSON
         
         // ============================================
-        // PROVEEDOR STORAGE SIMPLIFICADO
+        // PROVEEDOR STORAGE
         // ============================================
         
         let proveedorChecklists = [];
@@ -359,7 +352,6 @@
             
             if (proveedorChecklists.length === 0) {
                 container.innerHTML = '<p class="text-center text-muted">No hay checklists guardados</p>';
-                // Resetear estadísticas
                 document.getElementById('miProgresoFill').style.width = '0%';
                 document.getElementById('miProgresoPercent').textContent = '0%';
                 document.getElementById('totalItemsCount').textContent = '0';
@@ -368,7 +360,6 @@
                 return;
             }
             
-            // Calcular progreso general
             let totalItems = 0;
             let totalCompleted = 0;
             
@@ -381,7 +372,6 @@
             
             const overallPercent = totalItems > 0 ? Math.round((totalCompleted / totalItems) * 100) : 0;
             
-            // Actualizar barra de progreso general
             document.getElementById('miProgresoFill').style.width = `${overallPercent}%`;
             document.getElementById('miProgresoPercent').textContent = `${overallPercent}%`;
             document.getElementById('totalItemsCount').textContent = totalItems;
@@ -681,52 +671,55 @@
                 const content = await file.text();
                 const data = JSON.parse(content);
                 
-                // Validaciones
-                if (data.metadata?.type !== 'proveedor-config' || !data.validacion) {
+                // Validar estructura del archivo
+                if (data.metadata?.type !== 'proveedor-config' || !data.proveedor) {
                     throw new Error('Archivo no válido. Debe ser el archivo de configuración proporcionado por el contratista general.');
                 }
                 
-                // Validar ID y Licencia
-                const validacion = validarArchivoProveedor(data);
-                if (!validacion.valido) {
-                    throw new Error(validacion.error);
+                // Validar formato básico de ID y Licencia
+                if (!data.proveedor.id || !data.proveedor.licencia) {
+                    throw new Error('Archivo no válido: falta ID o Licencia');
                 }
                 
-                // Guardar datos del proveedor
-                document.getElementById('proveedorId').value = validacion.proveedor.id;
-                document.getElementById('licenciaKey').value = validacion.proveedor.licencia;
-                document.getElementById('proveedorNombre').value = validacion.proveedor.nombre;
-                document.getElementById('proveedorContacto').value = validacion.proveedor.contacto || '';
-                document.getElementById('proveedorEmail').value = validacion.proveedor.email || '';
-                document.getElementById('proveedorTelefono').value = validacion.proveedor.telefono || '';
+                if (!data.proveedor.id.startsWith('CTR-') || !data.proveedor.licencia.startsWith('COM-')) {
+                    throw new Error('Formato de ID o Licencia inválido');
+                }
+                
+                // Guardar datos del proveedor DIRECTAMENTE del archivo (sin validar contra base)
+                document.getElementById('proveedorId').value = data.proveedor.id;
+                document.getElementById('licenciaKey').value = data.proveedor.licencia;
+                document.getElementById('proveedorNombre').value = data.proveedor.nombre;
+                document.getElementById('proveedorContacto').value = data.proveedor.contacto || '';
+                document.getElementById('proveedorEmail').value = data.proveedor.email || '';
+                document.getElementById('proveedorTelefono').value = data.proveedor.telefono || '';
+                document.getElementById('proveedorDisciplina').value = data.proveedor.disciplina || 'both';
                 
                 // Mostrar datos
-                document.getElementById('displayProveedorId').textContent = validacion.proveedor.id;
-                document.getElementById('displayLicenciaKey').textContent = validacion.proveedor.licencia;
-                document.getElementById('displayProveedorNombre').textContent = validacion.proveedor.nombre;
-                document.getElementById('displayProveedorContacto').textContent = validacion.proveedor.contacto || '-';
-                document.getElementById('displayProveedorEmail').textContent = validacion.proveedor.email || '-';
-                document.getElementById('displayProveedorTelefono').textContent = validacion.proveedor.telefono || '-';
+                document.getElementById('displayProveedorId').textContent = data.proveedor.id;
+                document.getElementById('displayLicenciaKey').textContent = data.proveedor.licencia;
+                document.getElementById('displayProveedorNombre').textContent = data.proveedor.nombre;
+                document.getElementById('displayProveedorContacto').textContent = data.proveedor.contacto || '-';
+                document.getElementById('displayProveedorEmail').textContent = data.proveedor.email || '-';
+                document.getElementById('displayProveedorTelefono').textContent = data.proveedor.telefono || '-';
                 document.getElementById('proveedorDataDisplay').style.display = 'block';
                 
-                // GUARDAR EN LOCALSTORAGE
-                localStorage.setItem('proveedorConfig', JSON.stringify(validacion.proveedor));
+                // Guardar en localStorage
+                localStorage.setItem('proveedorConfig', JSON.stringify(data.proveedor));
                 
                 // CREAR CHECKLISTS AUTOMÁTICAMENTE
                 if (data.checklists && data.checklists.length > 0) {
                     const nuevosChecklists = [];
                     
                     for (const checklist of data.checklists) {
-                        // Por cada identificador (ej: MT-01, MT-02), crear un checklist individual
                         for (const identificador of checklist.identificadores) {
                             const nuevoChecklist = {
                                 id: generateId(),
                                 proveedor: {
-                                    id: validacion.proveedor.id,
-                                    nombre: validacion.proveedor.nombre,
-                                    licencia: validacion.proveedor.licencia
+                                    id: data.proveedor.id,
+                                    nombre: data.proveedor.nombre,
+                                    licencia: data.proveedor.licencia
                                 },
-                                proyecto: validacion.proyecto || {
+                                proyecto: data.proyecto || {
                                     id: 'proyecto-importado',
                                     nombre: 'Proyecto Importado',
                                     cliente: 'Cliente'
@@ -769,16 +762,15 @@
                         }
                     }
                     
-                    // Agregar a proveedorChecklists
                     for (const nuevo of nuevosChecklists) {
                         proveedorChecklists.push(nuevo);
                     }
                     saveProveedorChecklists();
                     renderChecklistsList();
                     
-                    statusDiv.innerHTML = `<div class="alert-success">✅ Configuración validada. Se crearon ${nuevosChecklists.length} checklists automáticamente.</div>`;
+                    statusDiv.innerHTML = `<div class="alert-success">✅ Configuración cargada. Se crearon ${nuevosChecklists.length} checklists automáticamente.</div>`;
                 } else {
-                    statusDiv.innerHTML = `<div class="alert-success">✅ Configuración validada. No hay checklists asignados.</div>`;
+                    statusDiv.innerHTML = `<div class="alert-success">✅ Configuración cargada. No hay checklists asignados.</div>`;
                 }
                 
                 setTimeout(() => statusDiv.style.display = 'none', 3000);
@@ -789,7 +781,6 @@
                 showNotification(error.message, 'error');
             }
         }
-
         
         // Cargar configuración guardada al iniciar
         function loadSavedProveedorConfig() {
@@ -893,7 +884,7 @@
         loadProveedorChecklists();
         loadSavedProveedorConfig();
         
-        console.log('Portal proveedor cargado');
+        console.log('Portal proveedor cargado - Acceso directo sin autenticación');
     </script>
 </body>
 </html>
