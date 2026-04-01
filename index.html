@@ -47,7 +47,6 @@
         .mt-3 { margin-top: 1rem; }
         .mb-2 { margin-bottom: 0.5rem; }
         .mb-4 { margin-bottom: 1.5rem; }
-        .p-2 { padding: 0.5rem; }
         .grid-cols-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
         .grid-cols-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
         .text-center { text-align: center; }
@@ -57,6 +56,11 @@
         .btn-sm { padding: 0.25rem 0.75rem; font-size: 0.875rem; }
         .form-select { padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); }
         .alert-info { background: rgba(59,130,246,0.1); border-left: 3px solid #3b82f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .table th { background: var(--bg-tertiary); font-weight: 600; }
+        .btn-icon-sm { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); }
+        .btn-icon-sm:hover { background: var(--bg-tertiary); }
         
         @media (max-width: 768px) {
             .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
@@ -96,6 +100,10 @@
             <a href="/comisionamiento/pages/subcontractor.html" class="nav-item">
                 <span class="nav-icon">👥</span>
                 <span class="nav-text">Proveedores</span>
+            </a>
+            <a href="/comisionamiento/pages/admin-checklist.html" class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-text">Admin</span>
             </a>
         </nav>
         
@@ -233,7 +241,7 @@
         <div class="modal-content modal-lg">
             <div class="modal-header">
                 <h3>📁 Gestión de Proyectos</h3>
-                <button class="modal-close" id="closeProjectsModal">&times;</button>
+                <button class="modal-close" id="closeProjectsModalBtn">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="projectsList"></div>
@@ -250,7 +258,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>➕ Nuevo Proyecto</h3>
-                <button class="modal-close" id="closeNewProjectModal">&times;</button>
+                <button class="modal-close" id="closeNewProjectModalBtn">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
@@ -285,52 +293,45 @@
         // DATOS DE EJEMPLO
         // ============================================
         
-        // Lista de proyectos
         let proyectos = [
-            { id: 'proj-001', name: 'Planta Industrial Norte', clientName: 'Industrias XYZ', projectCode: 'PIN-2024', location: 'Querétaro, QRO', createdAt: '2024-01-15' },
-            { id: 'proj-002', name: 'Refinería Centro', clientName: 'PEMEX', projectCode: 'REF-2024', location: 'Tula, HGO', createdAt: '2024-02-01' }
+            { id: 'proj-001', name: 'Planta Industrial Norte', clientName: 'Industrias XYZ', projectCode: 'PIN-2024', location: 'Querétaro, QRO' },
+            { id: 'proj-002', name: 'Refinería Centro', clientName: 'PEMEX', projectCode: 'REF-2024', location: 'Tula, HGO' }
         ];
         
         let proyectoActualId = 'proj-001';
         
-        // Datos de progreso por proyecto (ejemplo)
-        const progresoPorProyecto = {
-            'proj-001': { electrical: { total: 16, completed: 12 }, instrumentation: { total: 18, completed: 10 } },
-            'proj-002': { electrical: { total: 16, completed: 8 }, instrumentation: { total: 18, completed: 15 } }
-        };
-        
-        // Datos de punchlist
         let punchlistData = { high: 2, medium: 5, low: 3 };
         let observations = [
             { priority: 'high', category: 'electrical', text: 'Verificar calibración del tablero MT-01', createdAt: new Date().toISOString() },
             { priority: 'medium', category: 'instrumentation', text: 'Revisar conexión del transmisor PT-101', createdAt: new Date().toISOString() }
         ];
         
-        // Subcontratistas de ejemplo
         let subcontractors = [
             { id: 'sub-001', name: 'ElectroInstalaciones SA', discipline: 'electrical', progress: 68 },
-            { id: 'sub-002', name: 'Instrumentación del Norte', discipline: 'instrumentation', progress: 45 },
-            { id: 'sub-003', name: 'Control Industrial', discipline: 'both', progress: 72 }
+            { id: 'sub-002', name: 'Instrumentación del Norte', discipline: 'instrumentation', progress: 45 }
         ];
         
         let charts = {};
+        
+        // Progreso por proyecto (ejemplo)
+        const progresoPorProyecto = {
+            'proj-001': { electrical: { total: 16, completed: 12 }, instrumentation: { total: 18, completed: 10 } },
+            'proj-002': { electrical: { total: 16, completed: 8 }, instrumentation: { total: 18, completed: 15 } }
+        };
         
         // ============================================
         // FUNCIONES
         // ============================================
         
         function loadProjects() {
-            // Cargar proyectos guardados
             const saved = localStorage.getItem('proyectos');
             if (saved) {
                 proyectos = JSON.parse(saved);
             }
-            
             const savedCurrent = localStorage.getItem('proyectoActualId');
             if (savedCurrent) {
                 proyectoActualId = savedCurrent;
             }
-            
             renderProjectSelector();
         }
         
@@ -341,15 +342,11 @@
         
         function renderProjectSelector() {
             const selector = document.getElementById('projectSelector');
-            if (!selector) return;
-            
-            selector.innerHTML = proyectos.map(p => 
-                `<option value="${p.id}" ${p.id === proyectoActualId ? 'selected' : ''}>${p.name} - ${p.clientName}</option>`
-            ).join('');
-        }
-        
-        function getCurrentProject() {
-            return proyectos.find(p => p.id === proyectoActualId);
+            if (selector) {
+                selector.innerHTML = proyectos.map(p => 
+                    `<option value="${p.id}" ${p.id === proyectoActualId ? 'selected' : ''}>${p.name} - ${p.clientName}</option>`
+                ).join('');
+            }
         }
         
         function getCurrentProgress() {
@@ -379,7 +376,6 @@
             document.getElementById('totalCompleted').textContent = totalCompleted;
             document.getElementById('totalProgress').textContent = `${overallPercent}%`;
             
-            // Badge de punchlist
             const totalPunchlist = punchlistData.high + punchlistData.medium + punchlistData.low;
             const badge = document.getElementById('punchlistBadge');
             if (badge) badge.textContent = totalPunchlist;
@@ -391,7 +387,6 @@
             const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
             const progress = getCurrentProgress();
             
-            // Gráfica de barras
             const ctx = document.getElementById('disciplineChart')?.getContext('2d');
             if (ctx) {
                 if (charts.discipline) charts.discipline.destroy();
@@ -408,7 +403,6 @@
                 });
             }
             
-            // Gráfica de dona
             const donutCtx = document.getElementById('progressDonutChart')?.getContext('2d');
             if (donutCtx) {
                 if (charts.donut) charts.donut.destroy();
@@ -421,7 +415,6 @@
                 });
             }
             
-            // Gráfica de evolución
             const evolutionCtx = document.getElementById('evolutionChart')?.getContext('2d');
             if (evolutionCtx) {
                 if (charts.evolution) charts.evolution.destroy();
@@ -438,7 +431,6 @@
                 });
             }
             
-            // Gráfica de punchlist
             const punchCtx = document.getElementById('punchlistChart')?.getContext('2d');
             if (punchCtx) {
                 if (charts.punchlist) charts.punchlist.destroy();
@@ -452,50 +444,48 @@
         
         function updateRecentObservations() {
             const container = document.getElementById('recentObservationsList');
-            if (!container) return;
-            
-            if (observations.length === 0) {
-                container.innerHTML = '<p class="text-center text-muted">No hay observaciones recientes</p>';
-                return;
+            if (container) {
+                if (observations.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">No hay observaciones recientes</p>';
+                } else {
+                    container.innerHTML = observations.slice(0, 5).map(obs => `
+                        <div class="observation-item" style="border-left: 3px solid ${obs.priority === 'high' ? '#ef4444' : obs.priority === 'medium' ? '#f59e0b' : '#10b981'}">
+                            <div class="flex-between">
+                                <span class="badge ${obs.category === 'electrical' ? 'badge-electrical' : 'badge-instrumentation'}">${obs.category === 'electrical' ? '⚡' : '📟'}</span>
+                                <span class="text-sm text-muted">${new Date(obs.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            <div class="text-sm mt-2">${obs.text}</div>
+                        </div>
+                    `).join('');
+                }
             }
-            
-            container.innerHTML = observations.slice(0, 5).map(obs => `
-                <div class="observation-item" style="border-left: 3px solid ${obs.priority === 'high' ? '#ef4444' : obs.priority === 'medium' ? '#f59e0b' : '#10b981'}">
-                    <div class="flex-between">
-                        <span class="badge ${obs.category === 'electrical' ? 'badge-electrical' : 'badge-instrumentation'}">${obs.category === 'electrical' ? '⚡' : '📟'}</span>
-                        <span class="text-sm text-muted">${new Date(obs.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <div class="text-sm mt-2">${obs.text}</div>
-                </div>
-            `).join('');
         }
         
         function updateContractorsList() {
             const container = document.getElementById('contractorsList');
-            if (!container) return;
-            
-            if (subcontractors.length === 0) {
-                container.innerHTML = '<p class="text-center text-muted">No hay subcontratistas registrados</p>';
-                return;
+            if (container) {
+                if (subcontractors.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">No hay subcontratistas registrados</p>';
+                } else {
+                    container.innerHTML = subcontractors.map(c => `
+                        <div class="contractor-item">
+                            <div>
+                                <strong>${c.name}</strong>
+                                <div class="text-sm text-muted">${c.discipline === 'electrical' ? '⚡ Eléctrico' : '📟 Instrumentación'}</div>
+                            </div>
+                            <div class="contractor-progress">
+                                <div class="flex-between text-sm mb-1">
+                                    <span>Progreso</span>
+                                    <span>${c.progress}%</span>
+                                </div>
+                                <div class="progress-small">
+                                    <div class="progress-small-fill" style="width: ${c.progress}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
             }
-            
-            container.innerHTML = subcontractors.map(c => `
-                <div class="contractor-item">
-                    <div>
-                        <strong>${c.name}</strong>
-                        <div class="text-sm text-muted">${c.discipline === 'electrical' ? '⚡ Eléctrico' : c.discipline === 'instrumentation' ? '📟 Instrumentación' : '🔧 Ambas'}</div>
-                    </div>
-                    <div class="contractor-progress">
-                        <div class="flex-between text-sm mb-1">
-                            <span>Progreso</span>
-                            <span>${c.progress}%</span>
-                        </div>
-                        <div class="progress-small">
-                            <div class="progress-small-fill" style="width: ${c.progress}%"></div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
         }
         
         function renderProjectsList() {
@@ -518,7 +508,7 @@
                                 <td>${p.projectCode || '-'}</td>
                                 <td>${p.location || '-'}</td>
                                 <td>
-                                    ${p.id !== proyectoActualId ? `<button class="btn-icon-sm set-current" data-id="${p.id}" title="Establecer como actual">⭐</button>` : ''}
+                                    ${p.id !== proyectoActualId ? `<button class="btn-icon-sm set-current-project" data-id="${p.id}" title="Establecer como actual">⭐</button>` : ''}
                                     <button class="btn-icon-sm delete-project" data-id="${p.id}" style="color:#ef4444;" title="Eliminar">🗑️</button>
                                 </td>
                             </tr>
@@ -527,8 +517,7 @@
                 </table>
             `;
             
-            // Eventos
-            document.querySelectorAll('.set-current').forEach(btn => {
+            document.querySelectorAll('.set-current-project').forEach(btn => {
                 btn.addEventListener('click', () => {
                     proyectoActualId = btn.dataset.id;
                     saveProjects();
@@ -576,15 +565,13 @@
                 name: name,
                 clientName: document.getElementById('newProjectClient').value,
                 projectCode: document.getElementById('newProjectCode').value,
-                location: document.getElementById('newProjectLocation').value,
-                createdAt: new Date().toISOString().split('T')[0]
+                location: document.getElementById('newProjectLocation').value
             };
             
             proyectos.push(newProject);
             proyectoActualId = newId;
             saveProjects();
             
-            // Inicializar progreso para el nuevo proyecto
             progresoPorProyecto[newId] = { electrical: { total: 16, completed: 0 }, instrumentation: { total: 18, completed: 0 } };
             
             renderProjectSelector();
@@ -606,12 +593,13 @@
                 const div = document.createElement('div');
                 div.id = 'importStatus';
                 div.className = 'mt-3';
-                document.querySelector('.content-container').prepend(div);
+                const container = document.querySelector('.content-container');
+                if (container) container.prepend(div);
                 return div;
             })();
             
             statusDiv.style.display = 'block';
-            statusDiv.innerHTML = `<div class="alert-${type}" style="background: rgba(59,130,246,0.1); border-left: 3px solid ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'}; padding: 1rem; border-radius: 0.5rem;">${message}</div>`;
+            statusDiv.innerHTML = `<div style="background: rgba(59,130,246,0.1); border-left: 3px solid ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'}; padding: 1rem; border-radius: 0.5rem;">${message}</div>`;
             setTimeout(() => statusDiv.style.display = 'none', 3000);
         }
         
@@ -619,24 +607,16 @@
         // EXPORTAR
         // ============================================
         
-        async function exportToPDF() {
+        function exportToPDF() {
             showNotification('Generando PDF...', 'info');
-            setTimeout(() => {
-                showNotification('PDF generado correctamente', 'success');
-            }, 1500);
+            setTimeout(() => showNotification('PDF generado correctamente', 'success'), 1500);
         }
         
-        async function exportToExcel() {
+        function exportToExcel() {
             const progress = getCurrentProgress();
-            const data = [
-                { Disciplina: 'Eléctrico', 'Items Totales': progress.electrical.total, Completados: progress.electrical.completed, Pendientes: progress.electrical.total - progress.electrical.completed, Progreso: `${progress.electrical.percent}%` },
-                { Disciplina: 'Instrumentación', 'Items Totales': progress.instrumentation.total, Completados: progress.instrumentation.completed, Pendientes: progress.instrumentation.total - progress.instrumentation.completed, Progreso: `${progress.instrumentation.percent}%` }
-            ];
-            
-            const csvRows = [Object.keys(data[0]).join(',')];
-            data.forEach(row => {
-                csvRows.push(Object.values(row).join(','));
-            });
+            const csvRows = ['Disciplina,Items Totales,Completados,Pendientes,Progreso'];
+            csvRows.push(`Eléctrico,${progress.electrical.total},${progress.electrical.completed},${progress.electrical.total - progress.electrical.completed},${progress.electrical.percent}%`);
+            csvRows.push(`Instrumentación,${progress.instrumentation.total},${progress.instrumentation.completed},${progress.instrumentation.total - progress.instrumentation.completed},${progress.instrumentation.percent}%`);
             
             const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
@@ -645,7 +625,6 @@
             a.download = `dashboard-${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
             URL.revokeObjectURL(url);
-            
             showNotification('Excel generado correctamente', 'success');
         }
         
@@ -687,23 +666,82 @@
         });
         
         // ============================================
-        // EVENTOS
+        // EVENTOS DEL MODAL DE PROYECTOS
         // ============================================
         
+        // Botón Gestionar - abre el modal
+        document.getElementById('manageProjectsBtn')?.addEventListener('click', () => {
+            const modal = document.getElementById('projectsModal');
+            if (modal) {
+                renderProjectsList();
+                modal.style.display = 'flex';
+                console.log('Modal de proyectos abierto');
+            } else {
+                console.error('Modal no encontrado');
+            }
+        });
+        
+        // Cerrar modal con botón X
+        document.getElementById('closeProjectsModalBtn')?.addEventListener('click', () => {
+            document.getElementById('projectsModal').style.display = 'none';
+        });
+        
+        // Cerrar modal con botón footer
+        document.getElementById('closeProjectsFooterBtn')?.addEventListener('click', () => {
+            document.getElementById('projectsModal').style.display = 'none';
+        });
+        
+        // Abrir modal de nuevo proyecto
+        document.getElementById('newProjectBtn')?.addEventListener('click', () => {
+            document.getElementById('newProjectModal').style.display = 'flex';
+        });
+        
+        // Cerrar modal de nuevo proyecto
+        document.getElementById('closeNewProjectModalBtn')?.addEventListener('click', () => {
+            document.getElementById('newProjectModal').style.display = 'none';
+        });
+        document.getElementById('cancelNewProjectBtn')?.addEventListener('click', () => {
+            document.getElementById('newProjectModal').style.display = 'none';
+        });
+        
+        // Guardar nuevo proyecto
+        document.getElementById('saveNewProjectBtn')?.addEventListener('click', crearNuevoProyecto);
+        
+        // Cerrar modal al hacer clic fuera
+        window.addEventListener('click', (e) => {
+            if (e.target.id === 'projectsModal') e.target.style.display = 'none';
+            if (e.target.id === 'newProjectModal') e.target.style.display = 'none';
+        });
+        
+        // Selector de proyecto
         document.getElementById('projectSelector')?.addEventListener('change', (e) => {
             proyectoActualId = e.target.value;
             saveProjects();
             updateStats();
             updateCharts();
-            showNotification(`Proyecto cambiado a ${getCurrentProject()?.name}`, 'success');
+            showNotification(`Proyecto cambiado a ${proyectos.find(p => p.id === proyectoActualId)?.name}`, 'success');
         });
         
-        document.getElementById('manageProjectsBtn')?.addEventListener('click', () => {
-            renderProjectsList();
-            document.getElementById('projectsModal').style.display = 'flex';
+        // Botones de exportación
+        document.getElementById('exportPDFBtn')?.addEventListener('click', exportToPDF);
+        document.getElementById('exportExcelBtn')?.addEventListener('click', exportToExcel);
+        
+        // Botón agregar subcontratista
+        document.getElementById('addContractorBtn')?.addEventListener('click', () => {
+            showNotification('Funcionalidad en desarrollo', 'info');
         });
         
-        document.getElementById('closeProjectsModal')?.addEventListener('click', () => {
-            document.getElementById('projectsModal').style.display = 'none';
-        });
-        document.getElementById('closeProjectsFooterBtn
+        // ============================================
+        // INICIALIZAR
+        // ============================================
+        
+        loadProjects();
+        updateStats();
+        updateCharts();
+        updateRecentObservations();
+        updateContractorsList();
+        
+        console.log('Dashboard cargado - Modales funcionando');
+    </script>
+</body>
+</html>
