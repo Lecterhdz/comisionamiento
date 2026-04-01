@@ -142,13 +142,6 @@
         .grid-cols-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
         .grid-cols-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
         code { background: var(--bg-tertiary); padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.8rem; }
-        .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 1rem; font-size: 0.7rem; background: var(--bg-tertiary); }
-        .badge-electrical { background: #3b82f6; color: white; }
-        .badge-instrumentation { background: #8b5cf6; color: white; }
-        .border-bottom { border-bottom: 1px solid var(--border-color); }
-        .align-center { align-items: center; }
-        .gap-3 { gap: 1rem; }
-        .font-bold { font-weight: 700; }
         
         @media (max-width: 768px) {
             .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
@@ -193,11 +186,10 @@
         </header>
         
         <div class="content-container">
-            <!-- Gestión de Proveedores -->
+            <!-- IMPORTAR REPORTE DE PROVEEDOR -->
             <div class="card mb-4">
-                <div class="card-header flex-between">
-                    <h3>📥 Gestión de Proveedores</h3>
-                    <button id="manageContractorsBtn" class="btn-primary btn-sm">👥 Gestionar Proveedores</button>
+                <div class="card-header">
+                    <h3>📥 Importar reporte de proveedor</h3>
                 </div>
                 <div class="card-body">
                     <div class="file-upload-area" id="fileUploadArea">
@@ -210,19 +202,19 @@
                 </div>
             </div>
             
-            <!-- Gestión de Proyectos -->
+            <!-- GESTIÓN DE PROVEEDORES -->
             <div class="card mb-4">
                 <div class="card-header flex-between">
-                    <h3>📁 Proyectos</h3>
-                    <button id="newProjectBtn" class="btn-primary btn-sm">+ Nuevo Proyecto</button>
+                    <h3>👥 Proveedores Registrados</h3>
+                    <button id="manageContractorsBtn" class="btn-primary btn-sm">+ Nuevo Proveedor</button>
                 </div>
                 <div class="card-body">
-                    <div id="projectsList"></div>
+                    <div id="proveedoresList"></div>
                 </div>
             </div>
             
-            <!-- Estadísticas -->
-            <div class="grid-cols-4 mb-4">
+            <!-- ESTADÍSTICAS -->
+            <div class="grid-cols-4">
                 <div class="stat-card">
                     <div class="stat-value" id="totalProveedores">0</div>
                     <div class="stat-label">Proveedores</div>
@@ -243,24 +235,7 @@
         </div>
     </main>
     
-    <!-- Modal para gestionar proveedores -->
-    <div id="manageContractorsModal" class="modal" style="display: none;">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h3>👥 Gestionar Proveedores</h3>
-                <button class="modal-close" id="closeManageModalBtn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <button id="newContractorBtn" class="btn-primary mb-3">+ Nuevo Proveedor</button>
-                <div id="contractorsTable"></div>
-            </div>
-            <div class="modal-footer">
-                <button id="closeManageFooterBtn" class="btn-outline">Cerrar</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal para nuevo proveedor - AHORA CON SELECCIÓN DE CHECKLISTS -->
+    <!-- MODAL: Nuevo Proveedor (con selección de checklists) -->
     <div id="newContractorModal" class="modal" style="display: none;">
         <div class="modal-content modal-lg">
             <div class="modal-header">
@@ -296,76 +271,10 @@
                     </div>
                 </div>
                 
-                <!-- Selección de checklists para este proveedor -->
+                <!-- Selección de checklists -->
                 <div class="mt-4">
                     <h4>📋 Checklists a asignar</h4>
                     <p class="text-sm text-muted mb-3">Seleccione los sistemas/equipos que este proveedor debe completar</p>
-                    
-                    <!-- Filtros -->
-                    <div class="flex-between mb-3">
-                        <div>
-                            <button id="filterChecklistAllBtn" class="btn-outline btn-sm">Todos</button>
-                            <button id="filterChecklistElectricalBtn" class="btn-outline btn-sm ml-2">⚡ Eléctricos</button>
-                            <button id="filterChecklistInstrumentationBtn" class="btn-outline btn-sm ml-2">📟 Instrumentación</button>
-                        </div>
-                        <div>
-                            <button id="selectAllChecklistsBtn" class="btn-outline btn-sm">Seleccionar Todos</button>
-                            <button id="deselectAllChecklistsBtn" class="btn-outline btn-sm ml-2">Deseleccionar Todos</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Lista de checklists disponibles -->
-                    <div id="checklistsForContractor" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1rem;">
-                        <p class="text-center text-muted">Cargando checklists...</p>
-                    </div>
-                </div>
-                
-                <div class="alert-info mt-3">
-                    <strong>📌 Se generará:</strong>
-                    <ul class="mt-2">
-                        <li>ID único del proveedor</li>
-                        <li>Clave de licencia</li>
-                        <li>Archivo JSON con los checklists seleccionados</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="cancelNewContractorBtn" class="btn-outline">Cancelar</button>
-                <button id="saveNewContractorBtn" class="btn-primary">Generar y Enviar Archivo</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal para nuevo proyecto -->
-    <div id="newProjectModal" class="modal" style="display: none;">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h3>➕ Nuevo Proyecto</h3>
-                <button class="modal-close" id="closeNewProjectModalBtn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Nombre del Proyecto *</label>
-                    <input type="text" id="newProjectName" class="form-input" placeholder="Ej: Planta Industrial Norte">
-                </div>
-                <div class="grid-cols-2">
-                    <div class="form-group">
-                        <label>Cliente</label>
-                        <input type="text" id="newProjectClient" class="form-input" placeholder="Nombre del cliente">
-                    </div>
-                    <div class="form-group">
-                        <label>Código de Proyecto</label>
-                        <input type="text" id="newProjectCode" class="form-input" placeholder="Ej: PROJ-001">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Ubicación</label>
-                    <input type="text" id="newProjectLocation" class="form-input" placeholder="Ciudad, Estado">
-                </div>
-                
-                <div class="mt-4">
-                    <h4>📋 Seleccionar Checklists para el Proyecto</h4>
-                    <p class="text-sm text-muted mb-3">Seleccione los sistemas/equipos que formarán parte de este proyecto</p>
                     
                     <div class="flex-between mb-3">
                         <div>
@@ -374,25 +283,23 @@
                             <button id="filterInstrumentationBtn" class="btn-outline btn-sm ml-2">📟 Instrumentación</button>
                         </div>
                         <div>
-                            <button id="selectAllBtn" class="btn-outline btn-sm">Seleccionar Todos</button>
-                            <button id="deselectAllBtn" class="btn-outline btn-sm ml-2">Deseleccionar Todos</button>
+                            <button id="selectAllChecklistsBtn" class="btn-outline btn-sm">Seleccionar Todos</button>
+                            <button id="deselectAllChecklistsBtn" class="btn-outline btn-sm ml-2">Deseleccionar Todos</button>
                         </div>
                     </div>
                     
                     <div id="checklistsSelection" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1rem;">
                         <p class="text-center text-muted">Cargando checklists...</p>
                     </div>
-                    
-                    <div id="checklistConfigPanel" style="display: none;" class="mt-4">
-                        <h5>⚙️ Configuración de Cantidades</h5>
-                        <p class="text-sm text-muted">Para cada checklist seleccionado, indique cuántas unidades se instalarán</p>
-                        <div id="quantitiesConfig"></div>
-                    </div>
+                </div>
+                
+                <div class="alert-info mt-3">
+                    <strong>📌 Se generará automáticamente:</strong> ID único, Clave de licencia, Archivo JSON con los checklists seleccionados
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="cancelNewProjectBtn" class="btn-outline">Cancelar</button>
-                <button id="saveNewProjectBtn" class="btn-primary">Crear Proyecto</button>
+                <button id="cancelNewContractorBtn" class="btn-outline">Cancelar</button>
+                <button id="saveNewContractorBtn" class="btn-primary">Generar Archivo</button>
             </div>
         </div>
     </div>
@@ -405,75 +312,9 @@
         // ============================================
         
         let clientProveedores = [];
-        let proyectos = [];
-        let charts = {};
-        
-        // ============================================
-        // PROYECTOS
-        // ============================================
-        
-        function loadProyectos() {
-            const saved = localStorage.getItem('proyectos');
-            if (saved) {
-                proyectos = JSON.parse(saved);
-            } else {
-                proyectos = [{
-                    id: 'proj-001',
-                    name: 'Proyecto Principal',
-                    clientName: 'Cliente Ejemplo',
-                    projectCode: 'PROJ-001',
-                    location: 'Ciudad',
-                    createdAt: new Date().toISOString(),
-                    checklistsAsignados: []
-                }];
-                saveProyectos();
-            }
-            renderProjectsList();
-        }
-        
-        function saveProyectos() {
-            localStorage.setItem('proyectos', JSON.stringify(proyectos));
-        }
-        
-        function renderProjectsList() {
-            const container = document.getElementById('projectsList');
-            if (!container) return;
-            
-            if (proyectos.length === 0) {
-                container.innerHTML = '<p class="text-center text-muted">No hay proyectos registrados</p>';
-                return;
-            }
-            
-            container.innerHTML = `
-                <table class="table">
-                    <thead>
-                        <tr><th>Proyecto</th><th>Cliente</th><th>Código</th><th>Checklists</th><th>Acciones</th>
-                    </thead>
-                    <tbody>
-                        ${proyectos.map(p => `
-                            <tr>
-                                <td><strong>${p.name}</strong><br><span class="text-xs text-muted">${new Date(p.createdAt).toLocaleDateString()}</span></td>
-                                <td>${p.clientName || '-'}</td>
-                                <td>${p.projectCode || '-'}</td>
-                                <td class="text-center">${p.checklistsAsignados?.length || 0}</td>
-                                <td><button class="btn-icon-sm delete-project" data-id="${p.id}" style="color:#ef4444;">🗑️</button></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-            
-            document.querySelectorAll('.delete-project').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (confirm('¿Eliminar este proyecto?')) {
-                        proyectos = proyectos.filter(p => p.id !== btn.dataset.id);
-                        saveProyectos();
-                        renderProjectsList();
-                        showNotification('Proyecto eliminado', 'success');
-                    }
-                });
-            });
-        }
+        let availableChecklists = [];
+        let selectedChecklists = new Map();
+        let currentFilter = 'all';
         
         // ============================================
         // PROVEEDORES
@@ -485,7 +326,7 @@
                 clientProveedores = JSON.parse(saved);
             }
             updateStats();
-            renderContractorsTable();
+            renderProveedoresList();
         }
         
         function saveProveedores() {
@@ -506,8 +347,8 @@
             document.getElementById('totalProgreso').textContent = `${avgProgress}%`;
         }
         
-        function renderContractorsTable() {
-            const container = document.getElementById('contractorsTable');
+        function renderProveedoresList() {
+            const container = document.getElementById('proveedoresList');
             if (!container) return;
             
             if (clientProveedores.length === 0) {
@@ -517,20 +358,24 @@
             
             container.innerHTML = `
                 <table class="table">
-                    <thead><tr><th>Empresa</th><th>ID</th><th>Licencia</th><th>Contacto</th><th>Disciplina</th><th>Acciones</th></tr></thead>
+                    <thead>
+                        <tr><th>Empresa</th><th>ID</th><th>Licencia</th><th>Contacto</th><th>Disciplina</th><th>Checklists</th><th>Progreso</th><th>Acciones</th>
+                    </thead>
                     <tbody>
                         ${clientProveedores.map(p => `
                             <tr>
-                                <td>${escapeHtml(p.nombre)}</td>
+                                <td><strong>${escapeHtml(p.nombre)}</strong><br><span class="text-xs text-muted">${new Date(p.createdAt).toLocaleDateString()}</span></td>
                                 <td><code>${p.id}</code></td>
                                 <td><code>${p.licencia}</code></td>
                                 <td>${escapeHtml(p.contacto || '-')}</td>
                                 <td>${p.disciplina === 'electrical' ? '⚡ Eléctrico' : p.disciplina === 'instrumentation' ? '📟 Instrumentación' : '🔧 Ambas'}</td>
+                                <td class="text-center">${p.checklistsAsignados?.length || 0}</td>
+                                <td><div class="progress-small" style="width: 80px;"><div class="progress-small-fill" style="width: ${p.progress || 0}%; height: 4px;"></div></div> ${p.progress || 0}%</td>
                                 <td>
-                                    <button class="btn-icon-sm download-config" data-id="${p.id}">📥</button>
-                                    <button class="btn-icon-sm delete-contractor" data-id="${p.id}" style="color:#ef4444;">🗑️</button>
+                                    <button class="btn-icon-sm download-config" data-id="${p.id}" title="Descargar archivo de configuración">📥</button>
+                                    <button class="btn-icon-sm delete-contractor" data-id="${p.id}" style="color:#ef4444;" title="Eliminar">🗑️</button>
                                 </td>
-                            </tr>
+                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
@@ -548,7 +393,7 @@
                     if (confirm('¿Eliminar este proveedor?')) {
                         clientProveedores = clientProveedores.filter(p => p.id !== btn.dataset.id);
                         saveProveedores();
-                        renderContractorsTable();
+                        renderProveedoresList();
                         showNotification('Proveedor eliminado', 'success');
                     }
                 });
@@ -557,7 +402,17 @@
         
         function generarArchivoProveedor(proveedor) {
             const archivo = {
-                metadata: { version: "2.0", type: "proveedor-config", generatedAt: new Date().toISOString() },
+                metadata: {
+                    version: "2.0",
+                    type: "proveedor-config",
+                    generatedAt: new Date().toISOString(),
+                    generatedBy: "Contratista General"
+                },
+                validacion: {
+                    proveedorId: proveedor.id,
+                    licencia: proveedor.licencia,
+                    checksum: btoa(`${proveedor.id}:${proveedor.licencia}`)
+                },
                 proveedor: {
                     id: proveedor.id,
                     licencia: proveedor.licencia,
@@ -566,8 +421,10 @@
                     email: proveedor.email || '',
                     telefono: proveedor.telefono || '',
                     disciplina: proveedor.disciplina || 'both'
-                }
+                },
+                checklists: proveedor.checklistsAsignados || []
             };
+            
             const jsonStr = JSON.stringify(archivo, null, 2);
             const blob = new Blob([jsonStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -579,263 +436,9 @@
             showNotification(`Archivo generado para ${proveedor.nombre}`, 'success');
         }
         
-        function crearNuevoProveedor() {
-            const nombre = document.getElementById('newContractorName').value.trim();
-            if (!nombre) {
-                showNotification('Ingrese el nombre del proveedor', 'error');
-                return;
-            }
-            
-            const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-            const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-            
-            const nuevoProveedor = {
-                id, licencia, nombre,
-                contacto: document.getElementById('newContractorContact').value,
-                email: document.getElementById('newContractorEmail').value,
-                telefono: document.getElementById('newContractorPhone').value,
-                disciplina: document.getElementById('newContractorDiscipline').value,
-                progress: 0
-            };
-            
-            clientProveedores.push(nuevoProveedor);
-            saveProveedores();
-            renderContractorsTable();
-            generarArchivoProveedor(nuevoProveedor);
-            
-            document.getElementById('newContractorModal').style.display = 'none';
-            document.getElementById('newContractorName').value = '';
-            document.getElementById('newContractorContact').value = '';
-            document.getElementById('newContractorEmail').value = '';
-            document.getElementById('newContractorPhone').value = '';
-            
-            showNotification(`Proveedor ${nombre} creado`, 'success');
-        }
         // ============================================
-        // SELECCIÓN DE CHECKLISTS PARA PROVEEDOR
+        // SELECCIÓN DE CHECKLISTS
         // ============================================
-        
-        let availableChecklistsForContractor = [];
-        let selectedChecklistsForContractor = new Map(); // systemId -> { cantidad, identificadores }
-        let checklistFilter = 'all';
-        
-        function loadAvailableChecklistsForContractor() {
-            availableChecklistsForContractor = getAvailableChecklists();
-            renderChecklistsForContractor();
-        }
-        
-        function renderChecklistsForContractor() {
-            const container = document.getElementById('checklistsForContractor');
-            if (!container) return;
-            
-            let filtered = availableChecklistsForContractor;
-            if (checklistFilter === 'electrical') {
-                filtered = availableChecklistsForContractor.filter(c => c.disciplina === 'electrical');
-            } else if (checklistFilter === 'instrumentation') {
-                filtered = availableChecklistsForContractor.filter(c => c.disciplina === 'instrumentation');
-            }
-            
-            if (filtered.length === 0) {
-                container.innerHTML = '<p class="text-center text-muted">No hay checklists disponibles</p>';
-                return;
-            }
-            
-            container.innerHTML = filtered.map(checklist => `
-                <div class="checklist-select-item" style="display: flex; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
-                    <input type="checkbox" class="checklist-select-cb" data-id="${checklist.id}" ${selectedChecklistsForContractor.has(checklist.id) ? 'checked' : ''} style="margin-right: 1rem;">
-                    <div style="flex: 1;">
-                        <strong>${checklist.nombre}</strong>
-                        <span style="font-size: 0.7rem; padding: 0.125rem 0.5rem; border-radius: 1rem; ${checklist.disciplina === 'electrical' ? 'background:#3b82f6;' : 'background:#8b5cf6;'} color:white; margin-left: 0.5rem;">${checklist.disciplina === 'electrical' ? 'Eléctrico' : 'Instrumentación'}</span>
-                        ${checklist.categoria ? `<span class="text-sm text-muted ml-2">${checklist.categoria}</span>` : ''}
-                        <div class="text-sm text-muted mt-1">${checklist.totalItems} items en el checklist</div>
-                    </div>
-                    <div class="quantity-config" style="display: ${selectedChecklistsForContractor.has(checklist.id) ? 'flex' : 'none'}; align-items: center; gap: 0.5rem;">
-                        <label class="text-sm">Cantidad:</label>
-                        <input type="number" class="form-input quantity-input" data-id="${checklist.id}" value="${selectedChecklistsForContractor.get(checklist.id)?.cantidad || 1}" min="1" style="width: 70px;">
-                    </div>
-                </div>
-            `).join('');
-            
-            document.querySelectorAll('.checklist-select-cb').forEach(cb => {
-                cb.addEventListener('change', (e) => {
-                    const id = e.target.dataset.id;
-                    const quantityDiv = e.target.closest('.checklist-select-item')?.querySelector('.quantity-config');
-                    if (e.target.checked) {
-                        if (!selectedChecklistsForContractor.has(id)) {
-                            selectedChecklistsForContractor.set(id, { cantidad: 1, identificadores: [] });
-                        }
-                        if (quantityDiv) quantityDiv.style.display = 'flex';
-                    } else {
-                        selectedChecklistsForContractor.delete(id);
-                        if (quantityDiv) quantityDiv.style.display = 'none';
-                    }
-                });
-            });
-            
-            document.querySelectorAll('.quantity-input').forEach(input => {
-                input.addEventListener('change', (e) => {
-                    const id = e.target.dataset.id;
-                    const cantidad = parseInt(e.target.value) || 1;
-                    if (selectedChecklistsForContractor.has(id)) {
-                        selectedChecklistsForContractor.set(id, { ...selectedChecklistsForContractor.get(id), cantidad });
-                    }
-                });
-            });
-        }
-        
-        // Modificar crearNuevoProveedor para incluir checklists seleccionados
-        function crearNuevoProveedorConChecklists() {
-            const nombre = document.getElementById('newContractorName').value.trim();
-            if (!nombre) {
-                showNotification('Ingrese el nombre del proveedor', 'error');
-                return;
-            }
-            
-            if (selectedChecklistsForContractor.size === 0) {
-                showNotification('Seleccione al menos un checklist para asignar al proveedor', 'error');
-                return;
-            }
-            
-            // Generar ID y Licencia
-            const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-            const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-            
-            // Construir los checklists para el proveedor
-            const checklistsAsignados = [];
-            for (const [systemId, config] of selectedChecklistsForContractor.entries()) {
-                const sistema = availableChecklistsForContractor.find(c => c.id === systemId);
-                if (sistema) {
-                    // Generar identificadores según cantidad
-                    const identificadores = [];
-                    for (let i = 1; i <= config.cantidad; i++) {
-                        identificadores.push(`${sistema.nombre.substring(0, 3).toUpperCase()}-${String(i).padStart(2, '0')}`);
-                    }
-                    checklistsAsignados.push({
-                        systemId: systemId,
-                        systemNombre: sistema.nombre,
-                        cantidad: config.cantidad,
-                        identificadores: identificadores,
-                        itemsBase: sistema.items || []  // Los items del checklist base
-                    });
-                }
-            }
-            
-            // Crear el archivo para el proveedor
-            const archivoProveedor = {
-                metadata: {
-                    version: "2.0",
-                    type: "proveedor-config",
-                    generatedAt: new Date().toISOString(),
-                    generatedBy: "Contratista General"
-                },
-                validacion: {
-                    proveedorId: id,
-                    licencia: licencia,
-                    checksum: btoa(`${id}:${licencia}`)
-                },
-                proveedor: {
-                    id: id,
-                    licencia: licencia,
-                    nombre: nombre,
-                    contacto: document.getElementById('newContractorContact').value,
-                    email: document.getElementById('newContractorEmail').value,
-                    telefono: document.getElementById('newContractorPhone').value,
-                    disciplina: document.getElementById('newContractorDiscipline').value
-                },
-                checklists: checklistsAsignados
-            };
-            
-            // Guardar proveedor en localStorage
-            const nuevoProveedor = {
-                id: id,
-                licencia: licencia,
-                nombre: nombre,
-                contacto: document.getElementById('newContractorContact').value,
-                email: document.getElementById('newContractorEmail').value,
-                telefono: document.getElementById('newContractorPhone').value,
-                disciplina: document.getElementById('newContractorDiscipline').value,
-                checklistsAsignados: checklistsAsignados,
-                createdAt: new Date().toISOString()
-            };
-            
-            clientProveedores.push(nuevoProveedor);
-            saveProveedores();
-            renderContractorsTable();
-            
-            // Descargar archivo
-            const jsonStr = JSON.stringify(archivoProveedor, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `proveedor-${nombre.replace(/\s/g, '-')}-config.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            // Cerrar modal y limpiar
-            document.getElementById('newContractorModal').style.display = 'none';
-            document.getElementById('newContractorName').value = '';
-            document.getElementById('newContractorContact').value = '';
-            document.getElementById('newContractorEmail').value = '';
-            document.getElementById('newContractorPhone').value = '';
-            selectedChecklistsForContractor.clear();
-            
-            showNotification(`Proveedor ${nombre} creado. Archivo generado.`, 'success');
-        }
-        
-        // Eventos para filtros de checklists
-        document.getElementById('filterChecklistAllBtn')?.addEventListener('click', () => {
-            checklistFilter = 'all';
-            renderChecklistsForContractor();
-        });
-        document.getElementById('filterChecklistElectricalBtn')?.addEventListener('click', () => {
-            checklistFilter = 'electrical';
-            renderChecklistsForContractor();
-        });
-        document.getElementById('filterChecklistInstrumentationBtn')?.addEventListener('click', () => {
-            checklistFilter = 'instrumentation';
-            renderChecklistsForContractor();
-        });
-        
-        // Seleccionar/Deseleccionar todos
-        document.getElementById('selectAllChecklistsBtn')?.addEventListener('click', () => {
-            let filtered = availableChecklistsForContractor;
-            if (checklistFilter === 'electrical') {
-                filtered = availableChecklistsForContractor.filter(c => c.disciplina === 'electrical');
-            } else if (checklistFilter === 'instrumentation') {
-                filtered = availableChecklistsForContractor.filter(c => c.disciplina === 'instrumentation');
-            }
-            filtered.forEach(c => {
-                if (!selectedChecklistsForContractor.has(c.id)) {
-                    selectedChecklistsForContractor.set(c.id, { cantidad: 1, identificadores: [] });
-                }
-            });
-            renderChecklistsForContractor();
-        });
-        
-        document.getElementById('deselectAllChecklistsBtn')?.addEventListener('click', () => {
-            selectedChecklistsForContractor.clear();
-            renderChecklistsForContractor();
-        });
-        
-        // Modificar el botón guardar para usar la nueva función
-        document.getElementById('saveNewContractorBtn').removeEventListener('click', crearNuevoProveedor);
-        document.getElementById('saveNewContractorBtn').addEventListener('click', crearNuevoProveedorConChecklists);
-        
-        // Al abrir el modal, cargar checklists
-        document.getElementById('newContractorBtn').addEventListener('click', () => {
-            selectedChecklistsForContractor.clear();
-            checklistFilter = 'all';
-            loadAvailableChecklistsForContractor();
-            document.getElementById('newContractorModal').style.display = 'flex';
-        });      
-        // ============================================
-        // CHECKLISTS PARA PROYECTOS
-        // ============================================
-        
-        let availableChecklists = [];
-        let selectedChecklists = new Map();
-        let currentFilter = 'all';
         
         function loadAvailableChecklists() {
             availableChecklists = getAvailableChecklists();
@@ -859,8 +462,8 @@
             }
             
             container.innerHTML = filtered.map(checklist => `
-                <div class="checklist-select-item" style="display: flex; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
-                    <input type="checkbox" class="checklist-select-cb" data-id="${checklist.id}" ${selectedChecklists.has(checklist.id) ? 'checked' : ''} style="margin-right: 1rem;">
+                <div style="display: flex; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                    <input type="checkbox" class="checklist-cb" data-id="${checklist.id}" ${selectedChecklists.has(checklist.id) ? 'checked' : ''} style="margin-right: 1rem;">
                     <div style="flex: 1;">
                         <strong>${checklist.nombre}</strong>
                         <span style="font-size: 0.7rem; padding: 0.125rem 0.5rem; border-radius: 1rem; ${checklist.disciplina === 'electrical' ? 'background:#3b82f6;' : 'background:#8b5cf6;'} color:white; margin-left: 0.5rem;">${checklist.disciplina === 'electrical' ? 'Eléctrico' : 'Instrumentación'}</span>
@@ -874,10 +477,10 @@
                 </div>
             `).join('');
             
-            document.querySelectorAll('.checklist-select-cb').forEach(cb => {
+            document.querySelectorAll('.checklist-cb').forEach(cb => {
                 cb.addEventListener('change', (e) => {
                     const id = e.target.dataset.id;
-                    const quantityDiv = e.target.closest('.checklist-select-item')?.querySelector('.quantity-config');
+                    const quantityDiv = e.target.closest('div')?.querySelector('.quantity-config');
                     if (e.target.checked) {
                         if (!selectedChecklists.has(id)) {
                             selectedChecklists.set(id, { cantidad: 1, identificadores: [] });
@@ -887,7 +490,6 @@
                         selectedChecklists.delete(id);
                         if (quantityDiv) quantityDiv.style.display = 'none';
                     }
-                    updateQuantitiesPanel();
                 });
             });
             
@@ -898,55 +500,27 @@
                     if (selectedChecklists.has(id)) {
                         selectedChecklists.set(id, { ...selectedChecklists.get(id), cantidad });
                     }
-                    updateQuantitiesPanel();
                 });
             });
-            
-            updateQuantitiesPanel();
         }
         
-        function updateQuantitiesPanel() {
-            const panel = document.getElementById('quantitiesConfig');
-            const configPanel = document.getElementById('checklistConfigPanel');
-            
-            if (selectedChecklists.size === 0) {
-                configPanel.style.display = 'none';
-                return;
-            }
-            
-            configPanel.style.display = 'block';
-            
-            const selectedList = Array.from(selectedChecklists.entries()).map(([id, config]) => {
-                const checklist = availableChecklists.find(c => c.id === id);
-                return { ...config, nombre: checklist?.nombre || id, totalItems: checklist?.totalItems || 0 };
-            });
-            
-            panel.innerHTML = selectedList.map(item => `
-                <div class="flex-between align-center p-2 border-bottom">
-                    <div>
-                        <strong>${item.nombre}</strong>
-                        <div class="text-sm text-muted">${item.totalItems} items por unidad</div>
-                    </div>
-                    <div class="flex align-center gap-3">
-                        <span class="text-sm">Cantidad: ${item.cantidad}</span>
-                        <span class="text-sm font-bold">Total items: ${item.cantidad * item.totalItems}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        function crearNuevoProyecto() {
-            const name = document.getElementById('newProjectName').value.trim();
-            if (!name) {
-                showNotification('Ingrese el nombre del proyecto', 'error');
+        function crearNuevoProveedor() {
+            const nombre = document.getElementById('newContractorName').value.trim();
+            if (!nombre) {
+                showNotification('Ingrese el nombre del proveedor', 'error');
                 return;
             }
             
             if (selectedChecklists.size === 0) {
-                showNotification('Seleccione al menos un checklist para el proyecto', 'error');
+                showNotification('Seleccione al menos un checklist para asignar', 'error');
                 return;
             }
             
+            // Generar ID y Licencia
+            const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            
+            // Construir checklists asignados
             const checklistsAsignados = [];
             for (const [systemId, config] of selectedChecklists.entries()) {
                 const sistema = availableChecklists.find(c => c.id === systemId);
@@ -960,34 +534,89 @@
                         systemNombre: sistema.nombre,
                         cantidad: config.cantidad,
                         identificadores: identificadores,
-                        proveedorAsignado: null,
-                        estado: 'pendiente'
+                        itemsBase: sistema.items || []
                     });
                 }
             }
             
-            const newProject = {
-                id: `proj-${Date.now()}`,
-                name: name,
-                clientName: document.getElementById('newProjectClient').value,
-                projectCode: document.getElementById('newProjectCode').value,
-                location: document.getElementById('newProjectLocation').value,
+            const nuevoProveedor = {
+                id, licencia, nombre,
+                contacto: document.getElementById('newContractorContact').value,
+                email: document.getElementById('newContractorEmail').value,
+                telefono: document.getElementById('newContractorPhone').value,
+                disciplina: document.getElementById('newContractorDiscipline').value,
                 checklistsAsignados: checklistsAsignados,
+                progress: 0,
                 createdAt: new Date().toISOString()
             };
             
-            proyectos.push(newProject);
-            saveProyectos();
-            renderProjectsList();
+            clientProveedores.push(nuevoProveedor);
+            saveProveedores();
+            renderProveedoresList();
             
-            document.getElementById('newProjectModal').style.display = 'none';
-            document.getElementById('newProjectName').value = '';
-            document.getElementById('newProjectClient').value = '';
-            document.getElementById('newProjectCode').value = '';
-            document.getElementById('newProjectLocation').value = '';
+            // Generar archivo
+            generarArchivoProveedor(nuevoProveedor);
+            
+            // Cerrar modal y limpiar
+            document.getElementById('newContractorModal').style.display = 'none';
+            document.getElementById('newContractorName').value = '';
+            document.getElementById('newContractorContact').value = '';
+            document.getElementById('newContractorEmail').value = '';
+            document.getElementById('newContractorPhone').value = '';
             selectedChecklists.clear();
             
-            showNotification(`Proyecto ${name} creado con ${checklistsAsignados.length} sistemas`, 'success');
+            showNotification(`Proveedor ${nombre} creado. Archivo generado.`, 'success');
+        }
+        
+        // ============================================
+        // IMPORTAR REPORTE
+        // ============================================
+        
+        async function importarReporte(file) {
+            const statusDiv = document.getElementById('importStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<div class="alert-info">⏳ Procesando archivo...</div>';
+            
+            try {
+                const content = await file.text();
+                const data = JSON.parse(content);
+                
+                if (!data.proveedor || !data.proveedor.id || !data.proveedor.licencia) {
+                    throw new Error('El reporte no contiene identificación de proveedor');
+                }
+                
+                const existingProvider = clientProveedores.find(p => p.id === data.proveedor.id);
+                if (!existingProvider) {
+                    throw new Error(`Proveedor no encontrado: ${data.proveedor.id}`);
+                }
+                
+                if (existingProvider.licencia !== data.proveedor.licencia) {
+                    throw new Error('Licencia no válida');
+                }
+                
+                statusDiv.innerHTML = `<div class="alert-success">✅ Reporte importado de: ${data.proveedor.nombre}</div>`;
+                
+                let totalReportes = parseInt(localStorage.getItem('totalReportes') || '0') + 1;
+                localStorage.setItem('totalReportes', totalReportes);
+                
+                if (data.metadata?.isProrroga) {
+                    let totalProrrogas = parseInt(localStorage.getItem('totalProrrogas') || '0') + 1;
+                    localStorage.setItem('totalProrrogas', totalProrrogas);
+                }
+                
+                if (data.estadisticas?.porcentaje) {
+                    existingProvider.progress = data.estadisticas.porcentaje;
+                    saveProveedores();
+                    renderProveedoresList();
+                }
+                
+                updateStats();
+                setTimeout(() => statusDiv.style.display = 'none', 3000);
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert-error">❌ Error: ${error.message}</div>`;
+                setTimeout(() => statusDiv.style.display = 'none', 3000);
+            }
         }
         
         // ============================================
@@ -996,33 +625,9 @@
         
         function showNotification(message, type = 'info') {
             const statusDiv = document.getElementById('importStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = `<div class="alert-${type}">${message}</div>`;
-            setTimeout(() => statusDiv.style.display = 'none', 3000);
-        }
-        
-        async function importarReporte(file) {
-            const statusDiv = document.getElementById('importStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = '<div class="alert-info">⏳ Procesando archivo...</div>';
-            try {
-                const content = await file.text();
-                const data = JSON.parse(content);
-                if (data.proveedor) {
-                    statusDiv.innerHTML = `<div class="alert-success">✅ Reporte importado de: ${data.proveedor.nombre}</div>`;
-                    let totalReportes = parseInt(localStorage.getItem('totalReportes') || '0') + 1;
-                    localStorage.setItem('totalReportes', totalReportes);
-                    if (data.metadata?.isProrroga) {
-                        let totalProrrogas = parseInt(localStorage.getItem('totalProrrogas') || '0') + 1;
-                        localStorage.setItem('totalProrrogas', totalProrrogas);
-                    }
-                    updateStats();
-                } else {
-                    throw new Error('Formato no válido');
-                }
-                setTimeout(() => statusDiv.style.display = 'none', 3000);
-            } catch (error) {
-                statusDiv.innerHTML = `<div class="alert-error">❌ Error: ${error.message}</div>`;
+            if (statusDiv) {
+                statusDiv.style.display = 'block';
+                statusDiv.innerHTML = `<div class="alert-${type}">${message}</div>`;
                 setTimeout(() => statusDiv.style.display = 'none', 3000);
             }
         }
@@ -1078,41 +683,20 @@
         // EVENTOS
         // ============================================
         
-        document.getElementById('manageContractorsBtn').addEventListener('click', () => {
-            renderContractorsTable();
-            document.getElementById('manageContractorsModal').style.display = 'flex';
-        });
-        document.getElementById('closeManageModalBtn')?.addEventListener('click', () => {
-            document.getElementById('manageContractorsModal').style.display = 'none';
-        });
-        document.getElementById('closeManageFooterBtn')?.addEventListener('click', () => {
-            document.getElementById('manageContractorsModal').style.display = 'none';
-        });
-        
-        document.getElementById('newContractorBtn').addEventListener('click', () => {
+        document.getElementById('manageContractorsBtn')?.addEventListener('click', () => {
+            selectedChecklists.clear();
+            currentFilter = 'all';
+            loadAvailableChecklists();
             document.getElementById('newContractorModal').style.display = 'flex';
         });
+        
         document.getElementById('closeNewModalBtn')?.addEventListener('click', () => {
             document.getElementById('newContractorModal').style.display = 'none';
         });
         document.getElementById('cancelNewContractorBtn')?.addEventListener('click', () => {
             document.getElementById('newContractorModal').style.display = 'none';
         });
-        document.getElementById('saveNewContractorBtn').addEventListener('click', crearNuevoProveedor);
-        
-        document.getElementById('newProjectBtn').addEventListener('click', () => {
-            selectedChecklists.clear();
-            currentFilter = 'all';
-            loadAvailableChecklists();
-            document.getElementById('newProjectModal').style.display = 'flex';
-        });
-        document.getElementById('closeNewProjectModalBtn')?.addEventListener('click', () => {
-            document.getElementById('newProjectModal').style.display = 'none';
-        });
-        document.getElementById('cancelNewProjectBtn')?.addEventListener('click', () => {
-            document.getElementById('newProjectModal').style.display = 'none';
-        });
-        document.getElementById('saveNewProjectBtn').addEventListener('click', crearNuevoProyecto);
+        document.getElementById('saveNewContractorBtn')?.addEventListener('click', crearNuevoProveedor);
         
         document.getElementById('filterAllBtn')?.addEventListener('click', () => {
             currentFilter = 'all';
@@ -1127,7 +711,7 @@
             renderChecklistsSelection();
         });
         
-        document.getElementById('selectAllBtn')?.addEventListener('click', () => {
+        document.getElementById('selectAllChecklistsBtn')?.addEventListener('click', () => {
             let filtered = availableChecklists;
             if (currentFilter === 'electrical') {
                 filtered = availableChecklists.filter(c => c.disciplina === 'electrical');
@@ -1142,11 +726,12 @@
             renderChecklistsSelection();
         });
         
-        document.getElementById('deselectAllBtn')?.addEventListener('click', () => {
+        document.getElementById('deselectAllChecklistsBtn')?.addEventListener('click', () => {
             selectedChecklists.clear();
             renderChecklistsSelection();
         });
         
+        // File upload
         const fileUploadArea = document.getElementById('fileUploadArea');
         const fileInput = document.getElementById('fileInput');
         fileUploadArea?.addEventListener('click', () => fileInput?.click());
@@ -1168,7 +753,6 @@
         // INICIALIZAR
         // ============================================
         
-        loadProyectos();
         loadProveedores();
         loadAvailableChecklists();
         
