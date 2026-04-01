@@ -627,26 +627,24 @@
                 const content = await file.text();
                 const data = JSON.parse(content);
                 
-                // VALIDACIÓN: Verificar que el archivo es de configuración de proveedor
+                // Validaciones
                 if (data.metadata?.type !== 'proveedor-config' || !data.validacion) {
                     throw new Error('Archivo no válido. Debe ser el archivo de configuración proporcionado por el contratista general.');
                 }
                 
-                // VALIDACIÓN CRÍTICA: Verificar ID y Licencia
+                // Validar ID y Licencia
                 const validacion = validarArchivoProveedor(data);
-                
                 if (!validacion.valido) {
                     throw new Error(validacion.error);
                 }
                 
-                // Si es válido, cargar los datos
+                // Guardar datos del proveedor
                 document.getElementById('proveedorId').value = validacion.proveedor.id;
                 document.getElementById('licenciaKey').value = validacion.proveedor.licencia;
                 document.getElementById('proveedorNombre').value = validacion.proveedor.nombre;
                 document.getElementById('proveedorContacto').value = validacion.proveedor.contacto || '';
                 document.getElementById('proveedorEmail').value = validacion.proveedor.email || '';
                 document.getElementById('proveedorTelefono').value = validacion.proveedor.telefono || '';
-                document.getElementById('proveedorDisciplina').value = validacion.proveedor.disciplina || 'both';
                 
                 // Mostrar datos
                 document.getElementById('displayProveedorId').textContent = validacion.proveedor.id;
@@ -657,24 +655,87 @@
                 document.getElementById('displayProveedorTelefono').textContent = validacion.proveedor.telefono || '-';
                 document.getElementById('proveedorDataDisplay').style.display = 'block';
                 
-                // Guardar en localStorage
+                // GUARDAR EN LOCALSTORAGE
                 localStorage.setItem('proveedorConfig', JSON.stringify(validacion.proveedor));
-                if (validacion.proyecto) {
-                    localStorage.setItem('proyectoConfig', JSON.stringify(validacion.proyecto));
-                }
-                if (validacion.checklists) {
-                    localStorage.setItem('checklistsAsignados', JSON.stringify(validacion.checklists));
+                
+                // CREAR CHECKLISTS AUTOMÁTICAMENTE
+                if (data.checklists && data.checklists.length > 0) {
+                    const nuevosChecklists = [];
+                    
+                    for (const checklist of data.checklists) {
+                        // Por cada identificador (ej: MT-01, MT-02), crear un checklist individual
+                        for (const identificador of checklist.identificadores) {
+                            const nuevoChecklist = {
+                                id: generateId(),
+                                proveedor: {
+                                    id: validacion.proveedor.id,
+                                    nombre: validacion.proveedor.nombre,
+                                    licencia: validacion.proveedor.licencia
+                                },
+                                proyecto: validacion.proyecto || {
+                                    id: 'proyecto-importado',
+                                    nombre: 'Proyecto Importado',
+                                    cliente: 'Cliente'
+                                },
+                                etapa: {
+                                    id: 'comisionamiento',
+                                    nombre: 'Comisionamiento',
+                                    fechaFinProgramada: ''
+                                },
+                                sistema: {
+                                    id: checklist.systemId,
+                                    nombre: checklist.systemNombre,
+                                    tipo: checklist.disciplina || 'electrical',
+                                    identificador: identificador,
+                                    ubicacion: ''
+                                },
+                                checklist: {
+                                    [checklist.disciplina || 'electrical']: checklist.itemsBase.map(item => ({
+                                        ...item,
+                                        completed: false,
+                                        notes: ''
+                                    }))
+                                },
+                                estadisticas: {
+                                    totalItems: checklist.itemsBase.length,
+                                    completados: 0,
+                                    pendientes: checklist.itemsBase.length,
+                                    porcentaje: 0
+                                },
+                                metadata: {
+                                    isProrroga: false,
+                                    prorrogaMotivo: null
+                                },
+                                status: 'pending',
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            };
+                            
+                            nuevosChecklists.push(nuevoChecklist);
+                        }
+                    }
+                    
+                    // Agregar a proveedorChecklists
+                    for (const nuevo of nuevosChecklists) {
+                        proveedorChecklists.push(nuevo);
+                    }
+                    saveProveedorChecklists();
+                    renderChecklistsList();
+                    
+                    statusDiv.innerHTML = `<div class="alert-success">✅ Configuración validada. Se crearon ${nuevosChecklists.length} checklists automáticamente.</div>`;
+                } else {
+                    statusDiv.innerHTML = `<div class="alert-success">✅ Configuración validada. No hay checklists asignados.</div>`;
                 }
                 
-                statusDiv.innerHTML = `<div class="alert-success">✅ Configuración validada y cargada para: ${validacion.proveedor.nombre}</div>`;
                 setTimeout(() => statusDiv.style.display = 'none', 3000);
-                showNotification(`Configuración validada y cargada para ${validacion.proveedor.nombre}`, 'success');
+                showNotification(`Configuración cargada. ${data.checklists?.length || 0} sistemas asignados.`, 'success');
                 
             } catch (error) {
                 statusDiv.innerHTML = `<div class="alert-error">❌ Error: ${error.message}</div>`;
                 showNotification(error.message, 'error');
             }
         }
+
         
         // Cargar configuración guardada al iniciar
         function loadSavedProveedorConfig() {
