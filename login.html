@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Comisionamiento PWA</title>
+    
+    <link rel="stylesheet" href="/comisionamiento/css/core/variables.css">
+    <link rel="stylesheet" href="/comisionamiento/css/core/reset.css">
+    <link rel="stylesheet" href="/comisionamiento/css/core/utilities.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/buttons.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/cards.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/forms.css">
+    
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+        }
+        .login-container {
+            max-width: 450px;
+            width: 100%;
+            margin: 1rem;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .login-header .logo-icon {
+            font-size: 3rem;
+        }
+        .login-header h1 {
+            font-size: 1.75rem;
+            margin-top: 0.5rem;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 0.75rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all var(--transition-fast);
+        }
+        .tab-btn.active {
+            color: var(--primary-500);
+            border-bottom: 2px solid var(--primary-500);
+        }
+        [data-theme="dark"] .tab-btn.active {
+            color: var(--accent-neon);
+            border-bottom-color: var(--accent-neon);
+        }
+        .login-form {
+            display: none;
+        }
+        .login-form.active {
+            display: block;
+        }
+        .info-text {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-tertiary);
+        }
+        .alert-error {
+            background: rgba(239,68,68,0.1);
+            border-left: 3px solid #ef4444;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            color: #ef4444;
+        }
+        .w-100 {
+            width: 100%;
+        }
+        .mt-3 {
+            margin-top: 1rem;
+        }
+        .ml-2 {
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="card">
+            <div class="card-body">
+                <div class="login-header">
+                    <div class="logo-icon">⚡</div>
+                    <h1>Comisionamiento PWA</h1>
+                    <p class="text-muted">Sistema de gestión de comisionamiento</p>
+                </div>
+                
+                <div class="tab-buttons">
+                    <button id="tabContratista" class="tab-btn active">👔 Contratista</button>
+                    <button id="tabProveedor" class="tab-btn">👥 Proveedor</button>
+                </div>
+                
+                <!-- Formulario Contratista -->
+                <div id="formContratista" class="login-form active">
+                    <div class="form-group">
+                        <label>Usuario</label>
+                        <input type="text" id="contratistaUser" class="form-input" placeholder="contratista" value="contratista">
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="contratistaPass" class="form-input" placeholder="••••••••" value="comisiona2024">
+                    </div>
+                    <button id="loginContratistaBtn" class="btn-primary w-100">Ingresar</button>
+                    <div class="info-text">
+                        <strong>Demo:</strong> usuario: contratista / contraseña: comisiona2024
+                    </div>
+                </div>
+                
+                <!-- Formulario Proveedor -->
+                <div id="formProveedor" class="login-form">
+                    <div class="form-group">
+                        <label>ID del Proveedor</label>
+                        <input type="text" id="proveedorId" class="form-input" placeholder="CTR-XXXXXX-XXXX">
+                    </div>
+                    <div class="form-group">
+                        <label>Clave de Licencia</label>
+                        <input type="password" id="proveedorLicencia" class="form-input" placeholder="COM-XXXXXX-XXXXXX">
+                    </div>
+                    <button id="loginProveedorBtn" class="btn-primary w-100">Ingresar</button>
+                    <div class="info-text">
+                        <strong>Nota:</strong> Use el ID y Licencia que le proporcionó el contratista general
+                    </div>
+                </div>
+                
+                <div id="errorMessage" class="alert-error" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // Definir roles directamente en este archivo para evitar dependencias circulares
+        const ROLES = {
+            CONTRATISTA: 'contratista',
+            PROVEEDOR: 'proveedor'
+        };
+        
+        // Credenciales de ejemplo
+        const CREDENCIALES = {
+            contratista: {
+                usuario: 'contratista',
+                password: 'comisiona2024',
+                rol: ROLES.CONTRATISTA,
+                nombre: 'Contratista General'
+            }
+        };
+        
+        let proveedoresRegistrados = [];
+        
+        function loadProveedores() {
+            const saved = localStorage.getItem('client_proveedores');
+            if (saved) {
+                proveedoresRegistrados = JSON.parse(saved);
+            }
+        }
+        
+        function validarProveedor(proveedorId, licencia) {
+            const proveedor = proveedoresRegistrados.find(p => p.id === proveedorId && p.licencia === licencia);
+            if (proveedor) {
+                return {
+                    valido: true,
+                    rol: ROLES.PROVEEDOR,
+                    proveedor: proveedor,
+                    nombre: proveedor.nombre
+                };
+            }
+            return { valido: false, error: 'ID o Licencia inválidos' };
+        }
+        
+        function validarContratista(usuario, password) {
+            if (usuario === CREDENCIALES.contratista.usuario && password === CREDENCIALES.contratista.password) {
+                return {
+                    valido: true,
+                    rol: ROLES.CONTRATISTA,
+                    nombre: CREDENCIALES.contratista.nombre
+                };
+            }
+            return { valido: false, error: 'Usuario o contraseña incorrectos' };
+        }
+        
+        function doLogin(userData) {
+            localStorage.setItem('user_session', JSON.stringify(userData));
+        }
+        
+        // Cargar proveedores
+        loadProveedores();
+        
+        // Elementos
+        const tabContratista = document.getElementById('tabContratista');
+        const tabProveedor = document.getElementById('tabProveedor');
+        const formContratista = document.getElementById('formContratista');
+        const formProveedor = document.getElementById('formProveedor');
+        const errorDiv = document.getElementById('errorMessage');
+        
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 3000);
+        }
+        
+        // Tabs
+        tabContratista.addEventListener('click', () => {
+            tabContratista.classList.add('active');
+            tabProveedor.classList.remove('active');
+            formContratista.classList.add('active');
+            formProveedor.classList.remove('active');
+            errorDiv.style.display = 'none';
+        });
+        
+        tabProveedor.addEventListener('click', () => {
+            tabProveedor.classList.add('active');
+            tabContratista.classList.remove('active');
+            formProveedor.classList.add('active');
+            formContratista.classList.remove('active');
+            errorDiv.style.display = 'none';
+        });
+        
+        // Login Contratista
+        document.getElementById('loginContratistaBtn').addEventListener('click', () => {
+            const usuario = document.getElementById('contratistaUser').value.trim();
+            const password = document.getElementById('contratistaPass').value.trim();
+            
+            if (!usuario || !password) {
+                showError('Ingrese usuario y contraseña');
+                return;
+            }
+            
+            const result = validarContratista(usuario, password);
+            
+            if (result.valido) {
+                doLogin({
+                    id: usuario,
+                    nombre: result.nombre,
+                    rol: result.rol,
+                    loginTime: new Date().toISOString()
+                });
+                window.location.href = '/comisionamiento/index.html';
+            } else {
+                showError(result.error);
+            }
+        });
+        
+        // Login Proveedor
+        document.getElementById('loginProveedorBtn').addEventListener('click', () => {
+            const proveedorId = document.getElementById('proveedorId').value.trim();
+            const licencia = document.getElementById('proveedorLicencia').value.trim();
+            
+            if (!proveedorId || !licencia) {
+                showError('Ingrese ID y Licencia del proveedor');
+                return;
+            }
+            
+            const result = validarProveedor(proveedorId, licencia);
+            
+            if (result.valido) {
+                doLogin({
+                    id: result.proveedor.id,
+                    nombre: result.proveedor.nombre,
+                    rol: result.rol,
+                    proveedorId: result.proveedor.id,
+                    licencia: result.proveedor.licencia,
+                    loginTime: new Date().toISOString()
+                });
+                window.location.href = '/comisionamiento/pages/subcontractor.html';
+            } else {
+                showError(result.error);
+            }
+        });
+        
+        // Si ya hay sesión, redirigir
+        const session = localStorage.getItem('user_session');
+        if (session) {
+            try {
+                const user = JSON.parse(session);
+                if (user.rol === 'contratista') {
+                    window.location.href = '/comisionamiento/index.html';
+                } else if (user.rol === 'proveedor') {
+                    window.location.href = '/comisionamiento/pages/subcontractor.html';
+                }
+            } catch(e) {}
+        }
+        
+        // Tema
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+</body>
+</html>
