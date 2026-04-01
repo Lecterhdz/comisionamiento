@@ -1,7 +1,8 @@
 // ============================================
-// CHECKLISTS BASE - Definidos por el administrador
+// CHECKLISTS BASE - Gestión de checklists del sistema
 // ============================================
 
+// Datos base de checklists (predefinidos por el sistema)
 export const checklistsBase = {
     // ============================================
     // SISTEMAS ELÉCTRICOS
@@ -11,6 +12,7 @@ export const checklistsBase = {
         nombre: 'Tablero de Media Tensión',
         disciplina: 'electrical',
         categoria: 'tableros',
+        isSystem: true,  // No se puede eliminar
         items: [
             { id: 'MT-001', item: 'Verificación de fijación y nivelación del tablero', norm: 'NOM-001-SEDE-2012', critical: true },
             { id: 'MT-002', item: 'Verificación de espacio de trabajo (frente, laterales, posterior)', norm: 'NOM-001-SEDE-2012', critical: true },
@@ -24,6 +26,7 @@ export const checklistsBase = {
         nombre: 'Tablero de Baja Tensión',
         disciplina: 'electrical',
         categoria: 'tableros',
+        isSystem: true,
         items: [
             { id: 'BT-001', item: 'Verificación de fijación y nivelación', norm: 'NOM-001-SEDE-2012', critical: true },
             { id: 'BT-002', item: 'Verificación de protecciones termomagnéticas', norm: 'NOM-001-SEDE-2012', critical: true },
@@ -37,6 +40,7 @@ export const checklistsBase = {
         nombre: 'Motor Eléctrico',
         disciplina: 'electrical',
         categoria: 'motores',
+        isSystem: true,
         items: [
             { id: 'MTR-001', item: 'Verificación de alineación motor-carga', norm: 'NEMA MG-1', critical: true },
             { id: 'MTR-002', item: 'Medición de resistencia de aislamiento', norm: 'IEEE 43', critical: true },
@@ -50,6 +54,7 @@ export const checklistsBase = {
         nombre: 'Variador de Frecuencia (VFD)',
         disciplina: 'electrical',
         categoria: 'variadores',
+        isSystem: true,
         items: [
             { id: 'VFD-001', item: 'Verificación de parámetros de configuración', norm: 'Fabricante', critical: true },
             { id: 'VFD-002', item: 'Prueba de arranque y paro local/remoto', norm: 'Fabricante', critical: true },
@@ -67,6 +72,7 @@ export const checklistsBase = {
         nombre: 'Transmisor de Presión',
         disciplina: 'instrumentation',
         categoria: 'transmisores',
+        isSystem: true,
         items: [
             { id: 'TP-001', item: 'Verificación de rango y configuración', norm: 'API 551', critical: true },
             { id: 'TP-002', item: 'Prueba de calibración', norm: 'API 551', critical: true },
@@ -80,6 +86,7 @@ export const checklistsBase = {
         nombre: 'Transmisor de Temperatura',
         disciplina: 'instrumentation',
         categoria: 'transmisores',
+        isSystem: true,
         items: [
             { id: 'TT-001', item: 'Verificación de tipo de sensor (RTD/TC)', norm: 'IEC 60751', critical: true },
             { id: 'TT-002', item: 'Prueba de calibración', norm: 'IEC 60751', critical: true },
@@ -93,6 +100,7 @@ export const checklistsBase = {
         nombre: 'Válvula de Control',
         disciplina: 'instrumentation',
         categoria: 'valvulas',
+        isSystem: true,
         items: [
             { id: 'VC-001', item: 'Verificación de posición y sentido actuación (FO/FC)', norm: 'ISA-75', critical: true },
             { id: 'VC-002', item: 'Prueba de calibración de posicionador', norm: 'ISA-75', critical: true },
@@ -106,6 +114,7 @@ export const checklistsBase = {
         nombre: 'PLC/DCS',
         disciplina: 'instrumentation',
         categoria: 'control',
+        isSystem: true,
         items: [
             { id: 'PLC-001', item: 'Verificación de módulos I/O', norm: 'IEC 61131', critical: true },
             { id: 'PLC-002', item: 'Prueba de fuerza de señales (forcing)', norm: 'IEC 61131', critical: true },
@@ -116,53 +125,105 @@ export const checklistsBase = {
     }
 };
 
-// ============================================
-// FUNCIONES AUXILIARES
-// ============================================
+// Almacenamiento de sistemas personalizados (creados por admin)
+let customSystems = {};
 
-// Obtener todos los sistemas disponibles
+// Cargar sistemas personalizados guardados
+export function loadCustomSystems() {
+    const saved = localStorage.getItem('custom_checklists');
+    if (saved) {
+        customSystems = JSON.parse(saved);
+    }
+}
+
+// Guardar sistemas personalizados
+export function saveCustomSystems() {
+    localStorage.setItem('custom_checklists', JSON.stringify(customSystems));
+}
+
+// Obtener todos los sistemas (base + personalizados)
 export function getAllSystems() {
-    return Object.values(checklistsBase);
+    return { ...checklistsBase, ...customSystems };
+}
+
+// Obtener sistema por ID
+export function getSystemById(id) {
+    return { ...checklistsBase, ...customSystems }[id] || null;
 }
 
 // Obtener sistemas por disciplina
 export function getSystemsByDiscipline(discipline) {
-    return Object.values(checklistsBase).filter(s => s.disciplina === discipline);
+    const all = getAllSystems();
+    return Object.values(all).filter(s => s.disciplina === discipline);
 }
 
-// Obtener un sistema por ID
-export function getSystemById(id) {
-    return checklistsBase[id] || null;
-}
-
-// Crear un nuevo checklist personalizado (para administrador)
+// Crear nuevo sistema personalizado
 export function createCustomSystem(systemData) {
     const newId = `custom-${Date.now()}`;
-    checklistsBase[newId] = {
+    const newSystem = {
         id: newId,
         ...systemData,
         isCustom: true,
         createdAt: new Date().toISOString()
     };
-    return checklistsBase[newId];
+    customSystems[newId] = newSystem;
+    saveCustomSystems();
+    return newSystem;
 }
 
-// Actualizar un checklist existente
-export function updateSystem(systemId, updates) {
-    if (checklistsBase[systemId]) {
-        checklistsBase[systemId] = { ...checklistsBase[systemId], ...updates, updatedAt: new Date().toISOString() };
-        return checklistsBase[systemId];
+// Actualizar sistema personalizado
+export function updateCustomSystem(systemId, updates) {
+    if (customSystems[systemId]) {
+        customSystems[systemId] = { ...customSystems[systemId], ...updates, updatedAt: new Date().toISOString() };
+        saveCustomSystems();
+        return customSystems[systemId];
     }
     return null;
 }
 
-// Eliminar un checklist (solo si es personalizado)
-export function deleteSystem(systemId) {
-    if (checklistsBase[systemId]?.isCustom) {
-        delete checklistsBase[systemId];
+// Eliminar sistema personalizado
+export function deleteCustomSystem(systemId) {
+    if (customSystems[systemId]) {
+        delete customSystems[systemId];
+        saveCustomSystems();
         return true;
     }
     return false;
 }
 
-export default checklistsBase;
+// Obtener checklists disponibles para selección (formateado para proyecto)
+export function getAvailableChecklists() {
+    const all = getAllSystems();
+    return Object.values(all).map(system => ({
+        id: system.id,
+        nombre: system.nombre,
+        disciplina: system.disciplina,
+        categoria: system.categoria,
+        totalItems: system.items.length,
+        isCustom: system.isCustom || false
+    }));
+}
+
+// Obtener categorías únicas
+export function getUniqueCategories() {
+    const all = getAllSystems();
+    const categories = new Set();
+    Object.values(all).forEach(s => {
+        if (s.categoria) categories.add(s.categoria);
+    });
+    return Array.from(categories);
+}
+
+export default {
+    checklistsBase,
+    loadCustomSystems,
+    saveCustomSystems,
+    getAllSystems,
+    getSystemById,
+    getSystemsByDiscipline,
+    createCustomSystem,
+    updateCustomSystem,
+    deleteCustomSystem,
+    getAvailableChecklists,
+    getUniqueCategories
+};
