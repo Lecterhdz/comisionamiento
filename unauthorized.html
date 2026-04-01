@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Denegado - Comisionamiento PWA</title>
+    <link rel="stylesheet" href="/comisionamiento/css/core/variables.css">
+    <link rel="stylesheet" href="/comisionamiento/css/core/reset.css">
+    <link rel="stylesheet" href="/comisionamiento/css/core/utilities.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/buttons.css">
+    
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+        }
+        .unauthorized-container {
+            max-width: 500px;
+            padding: 2rem;
+        }
+        .lock-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+        }
+        .mt-4 {
+            margin-top: 1.5rem;
+        }
+        .ml-2 {
+            margin-left: 0.5rem;
+        }
+        .btn-primary, .btn-outline {
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .btn-primary {
+            background: var(--primary-500);
+            color: white;
+            border: none;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="unauthorized-container">
+        <div class="lock-icon">🔒</div>
+        <h1>Acceso Denegado</h1>
+        <p class="text-muted">No tienes permisos para acceder a esta página.</p>
+        <div class="mt-4">
+            <button id="logoutBtn" class="btn-primary">Cerrar Sesión</button>
+            <button id="backBtn" class="btn-outline ml-2">Volver</button>
+        </div>
+    </div>
+    
+    <script>
+        function logout() {
+            localStorage.removeItem('user_session');
+            window.location.href = '/comisionamiento/login.html';
+        }
+        
+        function getCurrentUser() {
+            const session = localStorage.getItem('user_session');
+            if (session) {
+                try {
+                    return JSON.parse(session);
+                } catch(e) {}
+            }
+            return null;
+        }
+        
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+        
+        document.getElementById('backBtn').addEventListener('click', () => {
+            const user = getCurrentUser();
+            if (user?.rol === 'contratista') {
+                window.location.href = '/comisionamiento/index.html';
+            } else if (user?.rol === 'proveedor') {
+                window.location.href = '/comisionamiento/pages/subcontractor.html';
+            } else {
+                window.location.href = '/comisionamiento/login.html';
+            }
+        });
+        
+        // Tema
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+</body>
+</html>
