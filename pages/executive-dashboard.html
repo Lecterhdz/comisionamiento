@@ -611,7 +611,224 @@
             
             showNotification(`Proveedor ${nombre} creado`, 'success');
         }
+        // ============================================
+        // SELECCIÓN DE CHECKLISTS PARA PROVEEDOR
+        // ============================================
         
+        let availableChecklistsForContractor = [];
+        let selectedChecklistsForContractor = new Map(); // systemId -> { cantidad, identificadores }
+        let checklistFilter = 'all';
+        
+        function loadAvailableChecklistsForContractor() {
+            availableChecklistsForContractor = getAvailableChecklists();
+            renderChecklistsForContractor();
+        }
+        
+        function renderChecklistsForContractor() {
+            const container = document.getElementById('checklistsForContractor');
+            if (!container) return;
+            
+            let filtered = availableChecklistsForContractor;
+            if (checklistFilter === 'electrical') {
+                filtered = availableChecklistsForContractor.filter(c => c.disciplina === 'electrical');
+            } else if (checklistFilter === 'instrumentation') {
+                filtered = availableChecklistsForContractor.filter(c => c.disciplina === 'instrumentation');
+            }
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No hay checklists disponibles</p>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map(checklist => `
+                <div class="checklist-select-item" style="display: flex; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                    <input type="checkbox" class="checklist-select-cb" data-id="${checklist.id}" ${selectedChecklistsForContractor.has(checklist.id) ? 'checked' : ''} style="margin-right: 1rem;">
+                    <div style="flex: 1;">
+                        <strong>${checklist.nombre}</strong>
+                        <span style="font-size: 0.7rem; padding: 0.125rem 0.5rem; border-radius: 1rem; ${checklist.disciplina === 'electrical' ? 'background:#3b82f6;' : 'background:#8b5cf6;'} color:white; margin-left: 0.5rem;">${checklist.disciplina === 'electrical' ? 'Eléctrico' : 'Instrumentación'}</span>
+                        ${checklist.categoria ? `<span class="text-sm text-muted ml-2">${checklist.categoria}</span>` : ''}
+                        <div class="text-sm text-muted mt-1">${checklist.totalItems} items en el checklist</div>
+                    </div>
+                    <div class="quantity-config" style="display: ${selectedChecklistsForContractor.has(checklist.id) ? 'flex' : 'none'}; align-items: center; gap: 0.5rem;">
+                        <label class="text-sm">Cantidad:</label>
+                        <input type="number" class="form-input quantity-input" data-id="${checklist.id}" value="${selectedChecklistsForContractor.get(checklist.id)?.cantidad || 1}" min="1" style="width: 70px;">
+                    </div>
+                </div>
+            `).join('');
+            
+            document.querySelectorAll('.checklist-select-cb').forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    const id = e.target.dataset.id;
+                    const quantityDiv = e.target.closest('.checklist-select-item')?.querySelector('.quantity-config');
+                    if (e.target.checked) {
+                        if (!selectedChecklistsForContractor.has(id)) {
+                            selectedChecklistsForContractor.set(id, { cantidad: 1, identificadores: [] });
+                        }
+                        if (quantityDiv) quantityDiv.style.display = 'flex';
+                    } else {
+                        selectedChecklistsForContractor.delete(id);
+                        if (quantityDiv) quantityDiv.style.display = 'none';
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.quantity-input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const id = e.target.dataset.id;
+                    const cantidad = parseInt(e.target.value) || 1;
+                    if (selectedChecklistsForContractor.has(id)) {
+                        selectedChecklistsForContractor.set(id, { ...selectedChecklistsForContractor.get(id), cantidad });
+                    }
+                });
+            });
+        }
+        
+        // Modificar crearNuevoProveedor para incluir checklists seleccionados
+        function crearNuevoProveedorConChecklists() {
+            const nombre = document.getElementById('newContractorName').value.trim();
+            if (!nombre) {
+                showNotification('Ingrese el nombre del proveedor', 'error');
+                return;
+            }
+            
+            if (selectedChecklistsForContractor.size === 0) {
+                showNotification('Seleccione al menos un checklist para asignar al proveedor', 'error');
+                return;
+            }
+            
+            // Generar ID y Licencia
+            const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            
+            // Construir los checklists para el proveedor
+            const checklistsAsignados = [];
+            for (const [systemId, config] of selectedChecklistsForContractor.entries()) {
+                const sistema = availableChecklistsForContractor.find(c => c.id === systemId);
+                if (sistema) {
+                    // Generar identificadores según cantidad
+                    const identificadores = [];
+                    for (let i = 1; i <= config.cantidad; i++) {
+                        identificadores.push(`${sistema.nombre.substring(0, 3).toUpperCase()}-${String(i).padStart(2, '0')}`);
+                    }
+                    checklistsAsignados.push({
+                        systemId: systemId,
+                        systemNombre: sistema.nombre,
+                        cantidad: config.cantidad,
+                        identificadores: identificadores,
+                        itemsBase: sistema.items || []  // Los items del checklist base
+                    });
+                }
+            }
+            
+            // Crear el archivo para el proveedor
+            const archivoProveedor = {
+                metadata: {
+                    version: "2.0",
+                    type: "proveedor-config",
+                    generatedAt: new Date().toISOString(),
+                    generatedBy: "Contratista General"
+                },
+                validacion: {
+                    proveedorId: id,
+                    licencia: licencia,
+                    checksum: btoa(`${id}:${licencia}`)
+                },
+                proveedor: {
+                    id: id,
+                    licencia: licencia,
+                    nombre: nombre,
+                    contacto: document.getElementById('newContractorContact').value,
+                    email: document.getElementById('newContractorEmail').value,
+                    telefono: document.getElementById('newContractorPhone').value,
+                    disciplina: document.getElementById('newContractorDiscipline').value
+                },
+                checklists: checklistsAsignados
+            };
+            
+            // Guardar proveedor en localStorage
+            const nuevoProveedor = {
+                id: id,
+                licencia: licencia,
+                nombre: nombre,
+                contacto: document.getElementById('newContractorContact').value,
+                email: document.getElementById('newContractorEmail').value,
+                telefono: document.getElementById('newContractorPhone').value,
+                disciplina: document.getElementById('newContractorDiscipline').value,
+                checklistsAsignados: checklistsAsignados,
+                createdAt: new Date().toISOString()
+            };
+            
+            clientProveedores.push(nuevoProveedor);
+            saveProveedores();
+            renderContractorsTable();
+            
+            // Descargar archivo
+            const jsonStr = JSON.stringify(archivoProveedor, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `proveedor-${nombre.replace(/\s/g, '-')}-config.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            // Cerrar modal y limpiar
+            document.getElementById('newContractorModal').style.display = 'none';
+            document.getElementById('newContractorName').value = '';
+            document.getElementById('newContractorContact').value = '';
+            document.getElementById('newContractorEmail').value = '';
+            document.getElementById('newContractorPhone').value = '';
+            selectedChecklistsForContractor.clear();
+            
+            showNotification(`Proveedor ${nombre} creado. Archivo generado.`, 'success');
+        }
+        
+        // Eventos para filtros de checklists
+        document.getElementById('filterChecklistAllBtn')?.addEventListener('click', () => {
+            checklistFilter = 'all';
+            renderChecklistsForContractor();
+        });
+        document.getElementById('filterChecklistElectricalBtn')?.addEventListener('click', () => {
+            checklistFilter = 'electrical';
+            renderChecklistsForContractor();
+        });
+        document.getElementById('filterChecklistInstrumentationBtn')?.addEventListener('click', () => {
+            checklistFilter = 'instrumentation';
+            renderChecklistsForContractor();
+        });
+        
+        // Seleccionar/Deseleccionar todos
+        document.getElementById('selectAllChecklistsBtn')?.addEventListener('click', () => {
+            let filtered = availableChecklistsForContractor;
+            if (checklistFilter === 'electrical') {
+                filtered = availableChecklistsForContractor.filter(c => c.disciplina === 'electrical');
+            } else if (checklistFilter === 'instrumentation') {
+                filtered = availableChecklistsForContractor.filter(c => c.disciplina === 'instrumentation');
+            }
+            filtered.forEach(c => {
+                if (!selectedChecklistsForContractor.has(c.id)) {
+                    selectedChecklistsForContractor.set(c.id, { cantidad: 1, identificadores: [] });
+                }
+            });
+            renderChecklistsForContractor();
+        });
+        
+        document.getElementById('deselectAllChecklistsBtn')?.addEventListener('click', () => {
+            selectedChecklistsForContractor.clear();
+            renderChecklistsForContractor();
+        });
+        
+        // Modificar el botón guardar para usar la nueva función
+        document.getElementById('saveNewContractorBtn').removeEventListener('click', crearNuevoProveedor);
+        document.getElementById('saveNewContractorBtn').addEventListener('click', crearNuevoProveedorConChecklists);
+        
+        // Al abrir el modal, cargar checklists
+        document.getElementById('newContractorBtn').addEventListener('click', () => {
+            selectedChecklistsForContractor.clear();
+            checklistFilter = 'all';
+            loadAvailableChecklistsForContractor();
+            document.getElementById('newContractorModal').style.display = 'flex';
+        });      
         // ============================================
         // CHECKLISTS PARA PROYECTOS
         // ============================================
