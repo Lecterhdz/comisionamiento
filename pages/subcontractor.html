@@ -89,21 +89,6 @@
             .sidebar-left { width: 100%; }
         }
     </style>
-<script type="module">
-    import { checkAccess, getCurrentUser, logout, ROLES } from '/comisionamiento/js/core/auth.js';
-    
-    if (!checkAccess([ROLES.PROVEEDOR])) {
-        // Redirige
-    }
-    
-    // Agregar botón logout
-    const logoutBtn = document.createElement('button');
-    logoutBtn.textContent = '🚪 Salir';
-    logoutBtn.className = 'btn-outline btn-sm';
-    logoutBtn.style.marginLeft = '1rem';
-    logoutBtn.addEventListener('click', () => logout());
-    document.querySelector('.top-bar-actions')?.appendChild(logoutBtn);
-</script>
 </head>
 <body>
 <script type="module">
