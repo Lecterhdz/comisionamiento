@@ -42,7 +42,6 @@ class NotificationService {
         const id = Date.now() + Math.random();
         const durationMs = duration || this.defaultDuration;
         
-        // Limpiar toasts si hay muchos
         if (this.toasts.size >= this.maxToasts) {
             const oldestId = this.toasts.keys().next().value;
             this.hide(oldestId);
@@ -92,17 +91,14 @@ class NotificationService {
         this.container.appendChild(toast);
         this.toasts.set(id, toast);
         
-        // Animación de entrada
         requestAnimationFrame(() => {
             toast.style.transform = 'translateX(0)';
         });
         
-        // Auto-eliminar
         const timeoutId = setTimeout(() => {
             this.hide(id);
         }, durationMs);
         
-        // Evento de cierre manual
         const closeBtn = toast.querySelector('button');
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -110,7 +106,6 @@ class NotificationService {
             clearTimeout(timeoutId);
         });
         
-        // Clic en el toast
         toast.addEventListener('click', () => {
             this.hide(id);
             clearTimeout(timeoutId);
@@ -151,7 +146,6 @@ class NotificationService {
         return this.show(message, 'info', duration);
     }
     
-    // Notificación de carga persistente
     loading(message = 'Cargando...') {
         const id = Date.now() + Math.random();
         const colors = { bg: '#3b82f6', bgDark: '#2563eb' };
