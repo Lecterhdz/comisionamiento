@@ -308,12 +308,76 @@
             </div>
         </div>
     </div>
-    
-    <script>
+    <!-- Modal para nuevo proyecto - VERSIÓN CON SELECCIÓN DE CHECKLISTS -->
+    <div id="newProjectModal" class="modal" style="display: none;">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3>➕ Nuevo Proyecto</h3>
+                <button class="modal-close" id="closeNewProjectModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Datos básicos del proyecto -->
+                <div class="form-group">
+                    <label>Nombre del Proyecto *</label>
+                    <input type="text" id="newProjectName" class="form-input" placeholder="Ej: Planta Industrial Norte">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="form-group">
+                        <label>Cliente</label>
+                        <input type="text" id="newProjectClient" class="form-input" placeholder="Nombre del cliente">
+                    </div>
+                    <div class="form-group">
+                        <label>Código de Proyecto</label>
+                        <input type="text" id="newProjectCode" class="form-input" placeholder="Ej: PROJ-001">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Ubicación</label>
+                    <input type="text" id="newProjectLocation" class="form-input" placeholder="Ciudad, Estado">
+                </div>
+                
+                <!-- Sección de selección de checklists -->
+                <div class="mt-4">
+                    <h4>📋 Seleccionar Checklists para el Proyecto</h4>
+                    <p class="text-sm text-muted mb-3">Seleccione los sistemas/equipos que formarán parte de este proyecto</p>
+                    
+                    <!-- Filtros -->
+                    <div class="flex-between mb-3">
+                        <div>
+                            <button id="filterAllBtn" class="btn-outline btn-sm">Todos</button>
+                            <button id="filterElectricalBtn" class="btn-outline btn-sm ml-2">⚡ Eléctricos</button>
+                            <button id="filterInstrumentationBtn" class="btn-outline btn-sm ml-2">📟 Instrumentación</button>
+                        </div>
+                        <div>
+                            <button id="selectAllBtn" class="btn-outline btn-sm">Seleccionar Todos</button>
+                            <button id="deselectAllBtn" class="btn-outline btn-sm ml-2">Deseleccionar Todos</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de checklists disponibles -->
+                    <div id="checklistsSelection" class="checklists-selection" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1rem;">
+                        <p class="text-center text-muted">Cargando checklists...</p>
+                    </div>
+                    
+                    <!-- Configuración por checklist seleccionado -->
+                    <div id="checklistConfigPanel" style="display: none;" class="mt-4">
+                        <h5>⚙️ Configuración de Cantidades</h5>
+                        <p class="text-sm text-muted">Para cada checklist seleccionado, indique cuántas unidades se instalarán</p>
+                        <div id="quantitiesConfig"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelNewProjectBtn" class="btn-outline">Cancelar</button>
+                <button id="saveNewProjectBtn" class="btn-primary">Crear Proyecto</button>
+            </div>
+        </div>
+    </div>    
+    <script type="module">
         // ============================================
         // GESTIÓN DE PROVEEDORES (SIN DEPENDENCIAS EXTERNAS)
         // ============================================
-        
+        import { getAvailableChecklists, getSystemsByDiscipline } from '/comisionamiento/js/data/checklists-base.js';
         let clientProveedores = [];
         
         // Cargar proveedores guardados
@@ -688,6 +752,235 @@
         loadProveedores();
         
         console.log('Dashboard ejecutivo cargado - Modales funcionando');
+        let availableChecklists = [];
+        let selectedChecklists = new Map(); // map de systemId -> { cantidad, identificadores }
+        let currentFilter = 'all';
+        
+        // Cargar checklists disponibles
+        function loadAvailableChecklists() {
+            availableChecklists = getAvailableChecklists();
+            renderChecklistsSelection();
+        }
+        
+        function renderChecklistsSelection() {
+            const container = document.getElementById('checklistsSelection');
+            if (!container) return;
+            
+            let filtered = availableChecklists;
+            if (currentFilter === 'electrical') {
+                filtered = availableChecklists.filter(c => c.disciplina === 'electrical');
+            } else if (currentFilter === 'instrumentation') {
+                filtered = availableChecklists.filter(c => c.disciplina === 'instrumentation');
+            }
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No hay checklists disponibles</p>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map(checklist => `
+                <div class="checklist-select-item" style="display: flex; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                    <input type="checkbox" class="checklist-select-cb" data-id="${checklist.id}" ${selectedChecklists.has(checklist.id) ? 'checked' : ''} style="margin-right: 1rem;">
+                    <div style="flex: 1;">
+                        <strong>${checklist.nombre}</strong>
+                        <span class="badge-discipline badge-${checklist.disciplina} ml-2" style="font-size: 0.7rem; padding: 0.125rem 0.5rem; border-radius: 1rem; ${checklist.disciplina === 'electrical' ? 'background:#3b82f6;' : 'background:#8b5cf6;'} color:white;">${checklist.disciplina === 'electrical' ? 'Eléctrico' : 'Instrumentación'}</span>
+                        ${checklist.categoria ? `<span class="text-sm text-muted ml-2">${checklist.categoria}</span>` : ''}
+                        <div class="text-sm text-muted mt-1">${checklist.totalItems} items en el checklist</div>
+                    </div>
+                    <div class="quantity-config" style="display: ${selectedChecklists.has(checklist.id) ? 'flex' : 'none'}; align-items: center; gap: 0.5rem;">
+                        <label class="text-sm">Cantidad:</label>
+                        <input type="number" class="form-input quantity-input" data-id="${checklist.id}" value="${selectedChecklists.get(checklist.id)?.cantidad || 1}" min="1" style="width: 70px;">
+                    </div>
+                </div>
+            `).join('');
+            
+            // Eventos de selección
+            document.querySelectorAll('.checklist-select-cb').forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    const id = e.target.dataset.id;
+                    const quantityDiv = e.target.closest('.checklist-select-item')?.querySelector('.quantity-config');
+                    if (e.target.checked) {
+                        if (!selectedChecklists.has(id)) {
+                            selectedChecklists.set(id, { cantidad: 1, identificadores: [] });
+                        }
+                        if (quantityDiv) quantityDiv.style.display = 'flex';
+                    } else {
+                        selectedChecklists.delete(id);
+                        if (quantityDiv) quantityDiv.style.display = 'none';
+                    }
+                    updateQuantitiesPanel();
+                });
+            });
+            
+            document.querySelectorAll('.quantity-input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const id = e.target.dataset.id;
+                    const cantidad = parseInt(e.target.value) || 1;
+                    if (selectedChecklists.has(id)) {
+                        selectedChecklists.set(id, { ...selectedChecklists.get(id), cantidad });
+                    }
+                    updateQuantitiesPanel();
+                });
+            });
+            
+            updateQuantitiesPanel();
+        }
+        
+        function updateQuantitiesPanel() {
+            const panel = document.getElementById('quantitiesConfig');
+            const configPanel = document.getElementById('checklistConfigPanel');
+            
+            if (selectedChecklists.size === 0) {
+                configPanel.style.display = 'none';
+                return;
+            }
+            
+            configPanel.style.display = 'block';
+            
+            const selectedList = Array.from(selectedChecklists.entries()).map(([id, config]) => {
+                const checklist = availableChecklists.find(c => c.id === id);
+                return { ...config, nombre: checklist?.nombre || id, totalItems: checklist?.totalItems || 0 };
+            });
+            
+            panel.innerHTML = selectedList.map(item => `
+                <div class="flex-between align-center p-2 border-bottom" style="border-bottom: 1px solid var(--border-color);">
+                    <div>
+                        <strong>${item.nombre}</strong>
+                        <div class="text-sm text-muted">${item.totalItems} items por unidad</div>
+                    </div>
+                    <div class="flex align-center gap-3">
+                        <span class="text-sm">Cantidad: ${item.cantidad}</span>
+                        <span class="text-sm font-bold">Total items: ${item.cantidad * item.totalItems}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Filtros
+        document.getElementById('filterAllBtn')?.addEventListener('click', () => {
+            currentFilter = 'all';
+            renderChecklistsSelection();
+        });
+        document.getElementById('filterElectricalBtn')?.addEventListener('click', () => {
+            currentFilter = 'electrical';
+            renderChecklistsSelection();
+        });
+        document.getElementById('filterInstrumentationBtn')?.addEventListener('click', () => {
+            currentFilter = 'instrumentation';
+            renderChecklistsSelection();
+        });
+        
+        // Seleccionar/Deseleccionar todos
+        document.getElementById('selectAllBtn')?.addEventListener('click', () => {
+            let filtered = availableChecklists;
+            if (currentFilter === 'electrical') {
+                filtered = availableChecklists.filter(c => c.disciplina === 'electrical');
+            } else if (currentFilter === 'instrumentation') {
+                filtered = availableChecklists.filter(c => c.disciplina === 'instrumentation');
+            }
+            filtered.forEach(c => {
+                if (!selectedChecklists.has(c.id)) {
+                    selectedChecklists.set(c.id, { cantidad: 1, identificadores: [] });
+                }
+            });
+            renderChecklistsSelection();
+        });
+        
+        document.getElementById('deselectAllBtn')?.addEventListener('click', () => {
+            selectedChecklists.clear();
+            renderChecklistsSelection();
+        });
+        
+        // Modificar crear proyecto para incluir los checklists seleccionados
+        function crearNuevoProyecto() {
+            const name = document.getElementById('newProjectName').value.trim();
+            if (!name) {
+                showNotification('Ingrese el nombre del proyecto', 'error');
+                return;
+            }
+            
+            if (selectedChecklists.size === 0) {
+                showNotification('Seleccione al menos un checklist para el proyecto', 'error');
+                return;
+            }
+            
+            // Generar identificadores para cada checklist según cantidad
+            const checklistsAsignados = [];
+            for (const [systemId, config] of selectedChecklists.entries()) {
+                const sistema = availableChecklists.find(c => c.id === systemId);
+                if (sistema) {
+                    const identificadores = [];
+                    for (let i = 1; i <= config.cantidad; i++) {
+                        identificadores.push(`${sistema.nombre.substring(0, 3).toUpperCase()}-${String(i).padStart(2, '0')}`);
+                    }
+                    checklistsAsignados.push({
+                        systemId: systemId,
+                        systemNombre: sistema.nombre,
+                        cantidad: config.cantidad,
+                        identificadores: identificadores,
+                        proveedorAsignado: null,
+                        estado: 'pendiente'
+                    });
+                }
+            }
+            
+            const newId = `proj-${Date.now()}`;
+            const newProject = {
+                id: newId,
+                name: name,
+                clientName: document.getElementById('newProjectClient').value,
+                projectCode: document.getElementById('newProjectCode').value,
+                location: document.getElementById('newProjectLocation').value,
+                checklistsAsignados: checklistsAsignados,
+                createdAt: new Date().toISOString()
+            };
+            
+            proyectos.push(newProject);
+            proyectoActualId = newId;
+            saveProjects();
+            
+            // Inicializar progreso
+            let totalElectrical = 0, totalInstrumentation = 0;
+            checklistsAsignados.forEach(c => {
+                const sistema = availableChecklists.find(s => s.id === c.systemId);
+                if (sistema?.disciplina === 'electrical') totalElectrical += sistema.totalItems * c.cantidad;
+                else if (sistema?.disciplina === 'instrumentation') totalInstrumentation += sistema.totalItems * c.cantidad;
+            });
+            
+            progresoPorProyecto[newId] = {
+                electrical: { total: totalElectrical, completed: 0 },
+                instrumentation: { total: totalInstrumentation, completed: 0 }
+            };
+            
+            renderProjectSelector();
+            renderProjectsList();
+            updateStats();
+            updateCharts();
+            
+            // Cerrar modal y limpiar
+            document.getElementById('newProjectModal').style.display = 'none';
+            document.getElementById('newProjectName').value = '';
+            document.getElementById('newProjectClient').value = '';
+            document.getElementById('newProjectCode').value = '';
+            document.getElementById('newProjectLocation').value = '';
+            selectedChecklists.clear();
+            
+            showNotification(`Proyecto ${name} creado con ${checklistsAsignados.length} sistemas`, 'success');
+        }
+        
+        // Al abrir el modal de nuevo proyecto, cargar checklists
+        document.getElementById('newProjectBtn')?.addEventListener('click', () => {
+            selectedChecklists.clear();
+            currentFilter = 'all';
+            loadAvailableChecklists();
+            document.getElementById('newProjectModal').style.display = 'flex';
+        });
+        
+        // Modificar el evento guardar
+        document.getElementById('saveNewProjectBtn')?.addEventListener('click', crearNuevoProyecto);
+        
+        // Inicializar
+        loadAvailableChecklists();
     </script>
 </body>
 </html>
