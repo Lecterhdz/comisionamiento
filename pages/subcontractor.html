@@ -590,7 +590,34 @@
             if (!str) return '';
             return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
         }
+        // ============================================
+        // TEMA CLARO/OSCURO
+        // ============================================
         
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            // Actualizar texto del botón
+            const themeToggle = document.getElementById('themeToggle');
+            const themeToggleMobile = document.getElementById('themeToggleMobile');
+            if (themeToggle) {
+                const textSpan = themeToggle.querySelector('.theme-text');
+                if (textSpan) textSpan.textContent = theme === 'dark' ? 'Modo claro' : 'Modo oscuro';
+            }
+            if (themeToggleMobile) {
+                themeToggleMobile.textContent = theme === 'dark' ? '☀️' : '🌙';
+            }
+        }
+        
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        setTheme(savedTheme);
+        
+        document.getElementById('themeToggle')?.addEventListener('click', () => {
+            setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        });
+        document.getElementById('themeToggleMobile')?.addEventListener('click', () => {
+            setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        });        
         // ============================================
         // IMPORTAR CONFIGURACIÓN DEL PROVEEDOR
         // ============================================
