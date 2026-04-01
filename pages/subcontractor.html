@@ -106,6 +106,14 @@
 </script>
 </head>
 <body>
+<script type="module">
+    import { checkAccess, ROLES } from '/comisionamiento/js/core/auth.js';
+    
+    // Verificar acceso - solo proveedor
+    if (!checkAccess([ROLES.PROVEEDOR])) {
+        // checkAccess ya redirige a login o unauthorized
+    }
+</script>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     
     <aside class="sidebar" id="sidebar">
