@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Checklists - Comisionamiento PWA</title>
+    
+    <link rel="stylesheet" href="/comisionamiento/css/core/variables.css">
+    <link rel="stylesheet" href="/comisionamiento/css/core/reset.css">
+    <link rel="stylesheet" href="/comisionamiento/css/core/utilities.css">
+    <link rel="stylesheet" href="/comisionamiento/css/layout/sidebar.css">
+    <link rel="stylesheet" href="/comisionamiento/css/layout/header.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/buttons.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/cards.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/forms.css">
+    <link rel="stylesheet" href="/comisionamiento/css/components/modals.css">
+    
+    <style>
+        .system-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+        }
+        .system-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .badge-discipline {
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.7rem;
+        }
+        .badge-electrical { background: #3b82f6; color: white; }
+        .badge-instrumentation { background: #8b5cf6; color: white; }
+        .items-list {
+            margin-top: 0.5rem;
+            padding-left: 1rem;
+            font-size: 0.875rem;
+        }
+        .item-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .critical-badge { background: #ef4444; color: white; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.7rem; }
+    </style>
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/comisionamiento/index.html" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">Comisiona</span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle">◀</button>
+            <button class="sidebar-close" id="sidebarClose">✕</button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="/comisionamiento/index.html" class="nav-item">📊 Dashboard</a>
+            <a href="/comisionamiento/pages/punchlist.html" class="nav-item">📋 Punchlist</a>
+            <a href="/comisionamiento/pages/executive-dashboard.html" class="nav-item">📈 Ejecutivo</a>
+            <a href="/comisionamiento/pages/subcontractor.html" class="nav-item">👥 Proveedores</a>
+            <a href="/comisionamiento/pages/admin-checklist.html" class="nav-item active">⚙️ Admin</a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <button id="themeToggle" class="theme-toggle-btn">🌙 Modo oscuro</button>
+        </div>
+    </aside>
+    
+    <main class="main-content">
+        <header class="top-bar">
+            <button class="hamburger" id="hamburger">☰</button>
+            <h1 class="page-title">Administración de Checklists</h1>
+            <button id="themeToggleMobile" class="mobile-theme-toggle">🌙</button>
+        </header>
+        
+        <div class="content-container">
+            <div class="card mb-4">
+                <div class="card-header flex-between">
+                    <h3>📋 Checklists Base por Disciplina</h3>
+                    <button id="addSystemBtn" class="btn-primary btn-sm">+ Nuevo Sistema</button>
+                </div>
+                <div class="card-body">
+                    <div id="systemsContainer"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Modal para editar/crear sistema -->
+    <div id="systemModal" class="modal" style="display: none;">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 id="modalTitle">➕ Nuevo Sistema/Equipo</h3>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre del Sistema *</label>
+                    <input type="text" id="systemName" class="form-input" placeholder="Ej: Tablero de Media Tensión">
+                </div>
+                <div class="form-group">
+                    <label>Disciplina *</label>
+                    <select id="systemDiscipline" class="form-select">
+                        <option value="electrical">⚡ Eléctrico</option>
+                        <option value="instrumentation">📟 Instrumentación</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <input type="text" id="systemCategory" class="form-input" placeholder="Ej: tableros, motores, transmisores">
+                </div>
+                <div class="form-group">
+                    <label>Items del Checklist</label>
+                    <div id="itemsEditor"></div>
+                    <button id="addItemBtn" class="btn-outline btn-sm mt-2">+ Agregar Item</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelModalBtn" class="btn-outline">Cancelar</button>
+                <button id="saveSystemBtn" class="btn-primary">Guardar Sistema</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { getAllSystems, getSystemsByDiscipline, createCustomSystem, updateSystem, deleteSystem } from '/comisionamiento/js/data/checklists-base.js';
+        
+        let currentEditingId = null;
+        let itemsList = [];
+        
+        function renderSystems() {
+            const systems = getAllSystems();
+            const container = document.getElementById('systemsContainer');
+            
+            const electricalSystems = systems.filter(s => s.disciplina === 'electrical');
+            const instrumentationSystems = systems.filter(s => s.disciplina === 'instrumentation');
+            
+            container.innerHTML = `
+                <h4 class="mb-2">⚡ Sistemas Eléctricos</h4>
+                ${renderSystemGroup(electricalSystems)}
+                <h4 class="mt-4 mb-2">📟 Sistemas de Instrumentación</h4>
+                ${renderSystemGroup(instrumentationSystems)}
+            `;
+            
+            // Eventos de edición y eliminación
+            document.querySelectorAll('.edit-system').forEach(btn => {
+                btn.addEventListener('click', () => editSystem(btn.dataset.id));
+            });
+            document.querySelectorAll('.delete-system').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (confirm('¿Eliminar este sistema?')) {
+                        if (deleteSystem(btn.dataset.id)) {
+                            renderSystems();
+                            showNotification('Sistema eliminado', 'success');
+                        } else {
+                            showNotification('No se puede eliminar un sistema base', 'error');
+                        }
+                    }
+                });
+            });
+        }
+        
+        function renderSystemGroup(systems) {
+            if (systems.length === 0) return '<p class="text-muted">No hay sistemas registrados</p>';
+            
+            return systems.map(s => `
+                <div class="system-card">
+                    <div class="system-header">
+                        <div>
+                            <strong>${s.nombre}</strong>
+                            <span class="badge-discipline badge-${s.disciplina} ml-2">${s.disciplina === 'electrical' ? 'Eléctrico' : 'Instrumentación'}</span>
+                            ${s.categoria ? `<span class="text-sm text-muted ml-2">${s.categoria}</span>` : ''}
+                            ${s.isCustom ? '<span class="badge badge-warning ml-2" style="background:#f59e0b;">Personalizado</span>' : ''}
+                        </div>
+                        <div>
+                            <button class="btn-icon-sm edit-system" data-id="${s.id}" title="Editar">✏️</button>
+                            <button class="btn-icon-sm delete-system" data-id="${s.id}" title="Eliminar" style="color:#ef4444;">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="items-list">
+                        ${s.items.map(item => `
+                            <div class="item-row">
+                                <span>• ${item.item}</span>
+                                ${item.critical ? '<span class="critical-badge">CRÍTICO</span>' : ''}
+                                <span class="text-xs text-muted">(${item.norm})</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function editSystem(id) {
+            const systems = getAllSystems();
+            const system = systems.find(s => s.id === id);
+            if (!system) return;
+            
+            currentEditingId = id;
+            document.getElementById('modalTitle').textContent = `✏️ Editar: ${system.nombre}`;
+            document.getElementById('systemName').value = system.nombre;
+            document.getElementById('systemDiscipline').value = system.disciplina;
+            document.getElementById('systemCategory').value = system.categoria || '';
+            
+            itemsList = [...system.items];
+            renderItemsEditor();
+            
+            document.getElementById('systemModal').style.display = 'flex';
+        }
+        
+        function renderItemsEditor() {
+            const container = document.getElementById('itemsEditor');
+            container.innerHTML = itemsList.map((item, idx) => `
+                <div class="item-row" style="margin-bottom: 0.5rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 0.5rem;">
+                    <div style="flex: 1;">
+                        <input type="text" value="${escapeHtml(item.item)}" class="form-input item-text" data-idx="${idx}" style="width: 100%; margin-bottom: 0.25rem;" placeholder="Descripción del item">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" value="${escapeHtml(item.norm)}" class="form-input item-norm" data-idx="${idx}" style="flex: 1;" placeholder="Norma">
+                            <label style="display: flex; align-items: center; gap: 0.25rem;">
+                                <input type="checkbox" class="item-critical" data-idx="${idx}" ${item.critical ? 'checked' : ''}> Crítico
+                            </label>
+                            <button class="btn-icon-sm remove-item" data-idx="${idx}" style="color:#ef4444;">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Eventos
+            document.querySelectorAll('.item-text').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    itemsList[idx].item = e.target.value;
+                });
+            });
+            document.querySelectorAll('.item-norm').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    itemsList[idx].norm = e.target.value;
+                });
+            });
+            document.querySelectorAll('.item-critical').forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    itemsList[idx].critical = e.target.checked;
+                });
+            });
+            document.querySelectorAll('.remove-item').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(btn.dataset.idx);
+                    itemsList.splice(idx, 1);
+                    renderItemsEditor();
+                });
+            });
+        }
+        
+        function addItem() {
+            itemsList.push({
+                id: `item-${Date.now()}-${itemsList.length}`,
+                item: 'Nuevo item',
+                norm: 'Por definir',
+                critical: false
+            });
+            renderItemsEditor();
+        }
+        
+        function saveSystem() {
+            const nombre = document.getElementById('systemName').value.trim();
+            if (!nombre) {
+                showNotification('Ingrese el nombre del sistema', 'error');
+                return;
+            }
+            
+            if (itemsList.length === 0) {
+                showNotification('Agregue al menos un item al checklist', 'error');
+                return;
+            }
+            
+            const systemData = {
+                nombre: nombre,
+                disciplina: document.getElementById('systemDiscipline').value,
+                categoria: document.getElementById('systemCategory').value,
+                items: itemsList.map((item, idx) => ({
+                    id: item.id || `${nombre.replace(/\s/g, '-')}-${idx + 1}`,
+                    item: item.item,
+                    norm: item.norm,
+                    critical: item.critical
+                }))
+            };
+            
+            if (currentEditingId) {
+                updateSystem(currentEditingId, systemData);
+                showNotification('Sistema actualizado', 'success');
+            } else {
+                createCustomSystem(systemData);
+                showNotification('Sistema creado', 'success');
+            }
+            
+            document.getElementById('systemModal').style.display = 'none';
+            resetForm();
+            renderSystems();
+        }
+        
+        function resetForm() {
+            currentEditingId = null;
+            document.getElementById('modalTitle').textContent = '➕ Nuevo Sistema/Equipo';
+            document.getElementById('systemName').value = '';
+            document.getElementById('systemDiscipline').value = 'electrical';
+            document.getElementById('systemCategory').value = '';
+            itemsList = [];
+            renderItemsEditor();
+        }
+        
+        function showNotification(message, type = 'info') {
+            const statusDiv = document.getElementById('importStatus') || (() => {
+                const div = document.createElement('div');
+                div.id = 'importStatus';
+                div.className = 'mt-3';
+                document.querySelector('.content-container').prepend(div);
+                return div;
+            })();
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = `<div class="alert-${type}" style="background: rgba(59,130,246,0.1); border-left: 3px solid ${type === 'success' ? '#10b981' : '#ef4444'}; padding: 1rem; border-radius: 0.5rem;">${message}</div>`;
+            setTimeout(() => statusDiv.style.display = 'none', 3000);
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+        }
+        
+        // Eventos
+        document.getElementById('addSystemBtn')?.addEventListener('click', () => {
+            resetForm();
+            document.getElementById('systemModal').style.display = 'flex';
+        });
+        document.getElementById('addItemBtn')?.addEventListener('click', addItem);
+        document.getElementById('saveSystemBtn')?.addEventListener('click', saveSystem);
+        document.getElementById('closeModalBtn')?.addEventListener('click', () => {
+            document.getElementById('systemModal').style.display = 'none';
+        });
+        document.getElementById('cancelModalBtn')?.
