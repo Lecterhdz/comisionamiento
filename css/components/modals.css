@@ -135,8 +135,9 @@
         padding: var(--spacing-md);
     }
 }
+
 /* ============================================
-   ALERTAS (Agregar al final de modals.css)
+   ALERTAS
    ============================================ */
 
 .alert {
