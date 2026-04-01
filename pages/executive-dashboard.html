@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <title>Dashboard Ejecutivo - Comisionamiento PWA</title>
     
-    <!-- CSS Core -->
+    <!-- CSS Core - CORREGIDO: usando subcarpetas -->
     <link rel="stylesheet" href="/comisionamiento/css/variables.css">
     <link rel="stylesheet" href="/comisionamiento/css/core/reset.css">
     <link rel="stylesheet" href="/comisionamiento/css/core/utilities.css">
@@ -47,6 +47,7 @@
         .table th { background: var(--bg-tertiary); font-weight: 600; }
         .btn-icon-sm { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); }
         .btn-icon-sm:hover { background: var(--bg-tertiary); }
+        .modal-footer { padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: var(--spacing-sm); background-color: var(--bg-tertiary); }
     </style>
 </head>
 <body>
@@ -222,6 +223,9 @@
                 <button id="newContractorBtn" class="btn-primary mb-3">+ Nuevo Proveedor</button>
                 <div id="contractorsTable"></div>
             </div>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="document.getElementById('manageContractorsModal').style.display='none'">Cerrar</button>
+            </div>
         </div>
     </div>
     
@@ -321,14 +325,7 @@
             container.innerHTML = `
                 <table class="table">
                     <thead>
-                        <tr>
-                            <th>Empresa</th>
-                            <th>ID</th>
-                            <th>Licencia</th>
-                            <th>Contacto</th>
-                            <th>Disciplina</th>
-                            <th>Acciones</th>
-                        </tr>
+                        <tr><th>Empresa</th><th>ID</th><th>Licencia</th><th>Contacto</th><th>Disciplina</th><th>Acciones</th> </tr>
                     </thead>
                     <tbody>
                         ${clientProveedores.map(p => `
@@ -369,12 +366,7 @@
         
         function generarArchivoParaProveedor(proveedor) {
             const archivoProveedor = {
-                metadata: {
-                    version: "2.0",
-                    type: "proveedor-config",
-                    generatedAt: new Date().toISOString(),
-                    generatedBy: "Contratista General"
-                },
+                metadata: { version: "2.0", type: "proveedor-config", generatedAt: new Date().toISOString(), generatedBy: "Contratista General" },
                 proveedor: {
                     id: proveedor.id,
                     licencia: proveedor.licencia,
@@ -383,16 +375,6 @@
                     email: proveedor.email || '',
                     telefono: proveedor.telefono || '',
                     disciplina: proveedor.disciplina || 'both'
-                },
-                instrucciones: {
-                    titulo: "Configuración de Proveedor",
-                    pasos: [
-                        "1. Abra el portal de proveedores: /pages/subcontractor.html",
-                        "2. Haga clic en 'Importar archivo de configuración'",
-                        "3. Seleccione este archivo JSON",
-                        "4. Complete los checklists según corresponda",
-                        "5. Exporte los reportes y envíelos al contratista general"
-                    ]
                 }
             };
             
@@ -404,7 +386,6 @@
             a.download = `proveedor-${proveedor.nombre.replace(/\s/g, '-')}-config.json`;
             a.click();
             URL.revokeObjectURL(url);
-            
             notifications.success(`Archivo generado para ${proveedor.nombre}`);
         }
         
@@ -419,9 +400,7 @@
             const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
             
             const nuevoProveedor = {
-                id: id,
-                licencia: licencia,
-                nombre: nombre,
+                id, licencia, nombre,
                 contacto: document.getElementById('newContractorContact').value,
                 email: document.getElementById('newContractorEmail').value,
                 telefono: document.getElementById('newContractorPhone').value,
@@ -431,17 +410,14 @@
             
             clientProveedores.push(nuevoProveedor);
             saveClientProveedores();
-            
             generarArchivoParaProveedor(nuevoProveedor);
-            
             document.getElementById('newContractorModal').style.display = 'none';
             renderContractorsTable();
-            
             notifications.success(`Proveedor ${nombre} creado`);
         }
         
         // ============================================
-        // FUNCIONES EXISTENTES DEL DASHBOARD
+        // FUNCIONES DEL DASHBOARD
         // ============================================
         
         async function init() {
@@ -458,12 +434,8 @@
             document.getElementById('totalReportes').textContent = consolidado.totalReportes;
             document.getElementById('totalProrrogas').textContent = prorrogas.length;
             
-            let totalItems = 0;
-            let totalCompletados = 0;
-            consolidado.proveedores.forEach(p => {
-                totalItems += p.totalItems;
-                totalCompletados += p.completados;
-            });
+            let totalItems = 0, totalCompletados = 0;
+            consolidado.proveedores.forEach(p => { totalItems += p.totalItems; totalCompletados += p.completados; });
             const progresoGeneral = totalItems > 0 ? Math.round((totalCompletados / totalItems) * 100) : 0;
             document.getElementById('totalProgreso').textContent = `${progresoGeneral}%`;
             
@@ -478,13 +450,9 @@
             const ctx = document.getElementById('etapasChart')?.getContext('2d');
             if (!ctx) return;
             if (charts.etapas) charts.etapas.destroy();
-            
             charts.etapas = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: etapas.map(e => e.etapa.nombre),
-                    datasets: [{ label: 'Progreso (%)', data: etapas.map(e => e.porcentaje), backgroundColor: '#3b82f6', borderRadius: 8 }]
-                },
+                data: { labels: etapas.map(e => e.etapa.nombre), datasets: [{ label: 'Progreso (%)', data: etapas.map(e => e.porcentaje), backgroundColor: '#3b82f6', borderRadius: 8 }] },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
             });
         }
@@ -493,13 +461,9 @@
             const ctx = document.getElementById('sistemasChart')?.getContext('2d');
             if (!ctx) return;
             if (charts.sistemas) charts.sistemas.destroy();
-            
             charts.sistemas = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: sistemas.map(s => s.sistema.nombre),
-                    datasets: [{ label: 'Progreso (%)', data: sistemas.map(s => s.porcentaje), backgroundColor: '#8b5cf6', borderRadius: 8 }]
-                },
+                data: { labels: sistemas.map(s => s.sistema.nombre), datasets: [{ label: 'Progreso (%)', data: sistemas.map(s => s.porcentaje), backgroundColor: '#8b5cf6', borderRadius: 8 }] },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
             });
         }
@@ -507,10 +471,7 @@
         function updateProveedoresList(proveedores) {
             const container = document.getElementById('proveedoresList');
             if (!container) return;
-            if (proveedores.length === 0) {
-                container.innerHTML = '<p class="text-center text-muted">No hay reportes de proveedores importados</p>';
-                return;
-            }
+            if (proveedores.length === 0) { container.innerHTML = '<p class="text-center text-muted">No hay reportes de proveedores importados</p>'; return; }
             container.innerHTML = proveedores.map(p => `
                 <div class="contractor-item">
                     <div><strong>${p.proveedor.nombre}</strong><div class="text-sm text-muted">ID: ${p.proveedor.id}</div></div>
@@ -525,10 +486,7 @@
         function updateReportesPorEtapa(etapas) {
             const container = document.getElementById('reportesPorEtapa');
             if (!container) return;
-            if (etapas.length === 0) {
-                container.innerHTML = '<p class="text-center text-muted">No hay reportes por etapa</p>';
-                return;
-            }
+            if (etapas.length === 0) { container.innerHTML = '<p class="text-center text-muted">No hay reportes por etapa</p>'; return; }
             container.innerHTML = `<div class="grid grid-cols-3 gap-3">${etapas.map(e => `
                 <div class="p-3 bg-secondary rounded-lg">
                     <div class="flex-between"><span class="etapa-tag">${e.etapa.nombre}</span><span class="font-bold">${e.porcentaje}%</span></div>
@@ -540,10 +498,7 @@
         function updateProrrogasList(prorrogas) {
             const container = document.getElementById('prorrogasList');
             if (!container) return;
-            if (prorrogas.length === 0) {
-                container.innerHTML = '<p class="text-center text-muted">No hay prórrogas registradas</p>';
-                return;
-            }
+            if (prorrogas.length === 0) { container.innerHTML = '<p class="text-center text-muted">No hay prórrogas registradas</p>'; return; }
             container.innerHTML = prorrogas.map(r => `
                 <div class="contractor-item" style="border-left: 3px solid #f59e0b;">
                     <div><strong>${r.datos.proveedor.nombre}</strong><span class="prorroga-badge">📅 Prórroga</span>
