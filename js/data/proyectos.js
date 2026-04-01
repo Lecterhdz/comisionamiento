@@ -74,8 +74,9 @@ export function desactivarProveedor(id) {
 export function getAllProveedores() {
     return [...proveedores];
 }
+
 // ============================================
-// VALIDAR ARCHIVO DE PROVEEDOR
+// VALIDAR ARCHIVO DE PROVEEDOR (ÚNICA DEFINICIÓN)
 // ============================================
 
 export function validarArchivoProveedor(archivoData) {
@@ -86,24 +87,26 @@ export function validarArchivoProveedor(archivoData) {
     
     const { proveedorId, licencia } = archivoData.validacion;
     
-    // Aquí podrías validar contra una base de datos de proveedores autorizados
-    // Por ahora, validamos que no estén vacíos
-    if (!proveedorId || !licencia) {
-        return { valido: false, error: 'ID o Licencia inválidos' };
+    // Validar contra la base de datos de proveedores
+    const resultado = validarProveedor(proveedorId, licencia);
+    
+    if (!resultado.valido) {
+        return { valido: false, error: 'ID o Licencia inválidos. Contacte al contratista general.' };
     }
     
-    // Validar formato básico
-    if (!proveedorId.startsWith('CTR-') || !licencia.startsWith('COM-')) {
-        return { valido: false, error: 'Formato de ID o Licencia inválido' };
+    // Verificar que el proveedor coincide con los datos
+    if (resultado.proveedor.nombre !== archivoData.proveedor.nombre) {
+        return { valido: false, error: 'Los datos del proveedor no coinciden con los registrados' };
     }
     
-    return {
-        valido: true,
-        proveedor: archivoData.proveedor,
+    return { 
+        valido: true, 
+        proveedor: resultado.proveedor,
         proyecto: archivoData.proyecto || null,
         checklists: archivoData.checklists || []
     };
 }
+
 // ============================================
 // GESTIÓN DE PROYECTOS
 // ============================================
@@ -223,11 +226,11 @@ export function generarArchivoParaProveedor(proyectoId, proveedorId, proveedorDa
         if (!sistemaBase) return null;
         
         return {
-            sistemaId: c.systemId,
-            sistemaNombre: sistemaBase.nombre,
+            systemId: c.systemId,
+            systemNombre: sistemaBase.nombre,
             cantidad: c.cantidad,
             identificadores: c.identificadores,
-            items: sistemaBase.items.map(item => ({
+            itemsBase: sistemaBase.items.map(item => ({
                 ...item,
                 completed: false,
                 notes: ''
@@ -248,7 +251,6 @@ export function generarArchivoParaProveedor(proyectoId, proveedorId, proveedorDa
         validacion: {
             proveedorId: proveedor.id,
             licencia: proveedor.licencia,
-            // Hash de seguridad opcional
             checksum: btoa(`${proveedor.id}:${proveedor.licencia}:${proyectoId}`)
         },
         proveedor: {
@@ -264,38 +266,6 @@ export function generarArchivoParaProveedor(proyectoId, proveedorId, proveedorDa
             cliente: proyecto.clientName
         },
         checklists: checklistsCompletos
-    };
-}
-
-// ============================================
-// VALIDAR ARCHIVO IMPORTADO POR PROVEEDOR
-// ============================================
-
-export function validarArchivoProveedor(archivoData) {
-    // Verificar que tiene los campos de validación
-    if (!archivoData.validacion || !archivoData.proveedor) {
-        return { valido: false, error: 'Archivo no válido: falta información de validación' };
-    }
-    
-    const { proveedorId, licencia } = archivoData.validacion;
-    
-    // Validar contra la base de datos de proveedores
-    const resultado = validarProveedor(proveedorId, licencia);
-    
-    if (!resultado.valido) {
-        return { valido: false, error: 'ID o Licencia inválidos. Contacte al contratista general.' };
-    }
-    
-    // Verificar que el proveedor coincide con los datos
-    if (resultado.proveedor.nombre !== archivoData.proveedor.nombre) {
-        return { valido: false, error: 'Los datos del proveedor no coinciden con los registrados' };
-    }
-    
-    return { 
-        valido: true, 
-        proveedor: resultado.proveedor,
-        proyecto: archivoData.proyecto,
-        checklists: archivoData.checklists
     };
 }
 
