@@ -9,19 +9,28 @@ let proveedores = []; // Lista de proveedores registrados con sus IDs y Licencia
 let currentProjectId = null;
 
 // ============================================
-// GESTIÓN DE PROVEEDORES (con ID y Licencia)
+// GESTIÓN DE PROVEEDORES (usando client_proveedores)
 // ============================================
 
-// Cargar proveedores guardados
+// Cargar proveedores guardados (desde la misma clave que usa Executive Dashboard)
 export function loadProveedores() {
-    const saved = localStorage.getItem('proveedores');
-    if (saved) {
-        proveedores = JSON.parse(saved);
+    // Primero intentar cargar desde client_proveedores (la que usa Executive Dashboard)
+    const savedClient = localStorage.getItem('client_proveedores');
+    if (savedClient) {
+        proveedores = JSON.parse(savedClient);
+    } else {
+        // Fallback a proveedores antiguo
+        const saved = localStorage.getItem('proveedores');
+        if (saved) {
+            proveedores = JSON.parse(saved);
+        }
     }
 }
 
-// Guardar proveedores
+// Guardar proveedores (en client_proveedores para mantener consistencia)
 export function saveProveedores() {
+    localStorage.setItem('client_proveedores', JSON.stringify(proveedores));
+    // También guardar en proveedores para compatibilidad
     localStorage.setItem('proveedores', JSON.stringify(proveedores));
 }
 
@@ -47,11 +56,24 @@ export function registrarProveedor(proveedorData) {
 
 // Validar ID y Licencia de un proveedor
 export function validarProveedor(id, licencia) {
+    // Buscar en proveedores registrados
     const proveedor = proveedores.find(p => p.id === id && p.licencia === licencia);
-    if (proveedor && proveedor.activo) {
+    
+    if (proveedor && proveedor.activo !== false) {
         return { valido: true, proveedor };
     }
-    return { valido: false, error: 'ID o Licencia inválidos' };
+    
+    // También verificar si existe en client_proveedores directamente
+    const clientProveedores = localStorage.getItem('client_proveedores');
+    if (clientProveedores) {
+        const clientList = JSON.parse(clientProveedores);
+        const clientProveedor = clientList.find(p => p.id === id && p.licencia === licencia);
+        if (clientProveedor) {
+            return { valido: true, proveedor: clientProveedor };
+        }
+    }
+    
+    return { valido: false, error: 'ID o Licencia inválidos. Contacte al contratista general.' };
 }
 
 // Obtener proveedor por ID
@@ -76,7 +98,7 @@ export function getAllProveedores() {
 }
 
 // ============================================
-// VALIDAR ARCHIVO DE PROVEEDOR (ÚNICA DEFINICIÓN)
+// VALIDAR ARCHIVO DE PROVEEDOR
 // ============================================
 
 export function validarArchivoProveedor(archivoData) {
@@ -87,11 +109,16 @@ export function validarArchivoProveedor(archivoData) {
     
     const { proveedorId, licencia } = archivoData.validacion;
     
+    // Validar formato básico
+    if (!proveedorId || !licencia) {
+        return { valido: false, error: 'ID o Licencia inválidos' };
+    }
+    
     // Validar contra la base de datos de proveedores
     const resultado = validarProveedor(proveedorId, licencia);
     
     if (!resultado.valido) {
-        return { valido: false, error: 'ID o Licencia inválidos. Contacte al contratista general.' };
+        return { valido: false, error: resultado.error };
     }
     
     // Verificar que el proveedor coincide con los datos
@@ -209,7 +236,7 @@ export function generarArchivoParaProveedor(proyectoId, proveedorId, proveedorDa
     
     // Verificar que el proveedor existe y está activo
     const proveedor = getProveedorById(proveedorId);
-    if (!proveedor || !proveedor.activo) {
+    if (!proveedor || proveedor.activo === false) {
         return { error: 'Proveedor no válido o inactivo' };
     }
     
