@@ -67,6 +67,28 @@
             .grid-cols-2 { grid-template-columns: 1fr; }
         }
     </style>
+    <script type="module">
+    import { checkAccess, getCurrentUser, logout, ROLES } from '/comisionamiento/js/core/auth.js';
+    
+    // Verificar acceso - solo contratista puede ver este dashboard
+    if (!checkAccess([ROLES.CONTRATISTA])) {
+        // Redirige a login si no está autenticado
+    }
+    
+    // Mostrar nombre del usuario
+    const user = getCurrentUser();
+    if (user) {
+        console.log(`Bienvenido ${user.nombre} (${user.rol})`);
+    }
+    
+    // Botón de logout (agregar en el header)
+    const logoutBtn = document.createElement('button');
+    logoutBtn.textContent = '🚪 Salir';
+    logoutBtn.className = 'btn-outline btn-sm';
+    logoutBtn.style.marginLeft = '1rem';
+    logoutBtn.addEventListener('click', () => logout());
+    document.querySelector('.top-bar-actions')?.appendChild(logoutBtn);
+</script>
 </head>
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
