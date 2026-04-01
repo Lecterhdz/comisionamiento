@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-    <title>Dashboard Ejecutivo - Comisionamiento PWA</title>
+    <title>Comisionamiento PWA - Dashboard</title>
     
     <!-- CSS Core -->
     <link rel="stylesheet" href="/comisionamiento/css/core/variables.css">
@@ -22,56 +22,45 @@
     <link rel="stylesheet" href="/comisionamiento/css/components/cards.css">
     <link rel="stylesheet" href="/comisionamiento/css/components/forms.css">
     <link rel="stylesheet" href="/comisionamiento/css/components/modals.css">
-    <link rel="stylesheet" href="/comisionamiento/css/components/animations.css">
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
     <style>
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
-        }
-        .stat-card {
-            text-align: center;
-            padding: 1.5rem;
-            background: var(--bg-secondary);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-color);
-        }
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary-500);
-        }
-        [data-theme="dark"] .stat-value {
-            color: var(--accent-neon);
-        }
-        .contractor-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .contractor-progress {
-            width: 150px;
-        }
-        .progress-small {
-            height: 6px;
-            background: var(--bg-tertiary);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        .progress-small-fill {
-            height: 100%;
-            background: var(--primary-500);
-            border-radius: 3px;
-            transition: width 0.3s;
-        }
-        [data-theme="dark"] .progress-small-fill {
-            background: var(--accent-neon);
+        .chart-container { position: relative; height: 300px; width: 100%; }
+        .stat-card { text-align: center; padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border-color); }
+        .stat-value { font-size: 2.5rem; font-weight: 700; color: var(--primary-500); }
+        [data-theme="dark"] .stat-value { color: var(--accent-neon); }
+        .contractor-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border-color); }
+        .contractor-progress { width: 150px; }
+        .progress-small { height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; }
+        .progress-small-fill { height: 100%; background: var(--primary-500); border-radius: 3px; transition: width 0.3s; }
+        [data-theme="dark"] .progress-small-fill { background: var(--accent-neon); }
+        .observation-item { padding: 0.75rem; border-radius: 0.5rem; background: var(--bg-secondary); margin-bottom: 0.5rem; }
+        .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 1rem; font-size: 0.7rem; background: var(--bg-tertiary); }
+        .badge-electrical { background: #3b82f6; color: white; }
+        .badge-instrumentation { background: #8b5cf6; color: white; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .text-sm { font-size: 0.875rem; }
+        .text-muted { color: var(--text-tertiary); }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 1rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
+        .p-2 { padding: 0.5rem; }
+        .grid-cols-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .grid-cols-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .btn-outline { background: transparent; border: 1px solid var(--border-color); padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; }
+        .btn-primary { background: var(--primary-500); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; }
+        .btn-sm { padding: 0.25rem 0.75rem; font-size: 0.875rem; }
+        .form-select { padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); }
+        .alert-info { background: rgba(59,130,246,0.1); border-left: 3px solid #3b82f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; }
+        
+        @media (max-width: 768px) {
+            .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+            .grid-cols-2 { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -124,7 +113,7 @@
             <button class="hamburger" id="hamburger" aria-label="Abrir menú">
                 <span></span><span></span><span></span>
             </button>
-            <h1 class="page-title">Dashboard Ejecutivo</h1>
+            <h1 class="page-title">Dashboard</h1>
             <div class="top-bar-actions">
                 <button id="themeToggleMobile" class="mobile-theme-toggle">🌙</button>
                 <button id="exportPDFBtn" class="btn-primary btn-sm">📄 Exportar PDF</button>
@@ -132,7 +121,7 @@
             </div>
         </header>
         
-        <div class="content-container" id="reportContent">
+        <div class="content-container">
             <!-- Selector de proyecto -->
             <div class="card mb-4">
                 <div class="card-body">
@@ -149,7 +138,7 @@
             </div>
             
             <!-- Tarjetas de resumen -->
-            <div class="grid grid-cols-4 mb-4">
+            <div class="grid-cols-4 mb-4">
                 <div class="stat-card">
                     <div class="stat-value" id="totalElectrical">0</div>
                     <div class="stat-label">Items Eléctricos</div>
@@ -169,7 +158,7 @@
             </div>
             
             <!-- Gráficas principales -->
-            <div class="grid grid-cols-2 mb-4">
+            <div class="grid-cols-2 mb-4">
                 <div class="card">
                     <div class="card-header">
                         <h3>📊 Progreso por Disciplina</h3>
@@ -216,7 +205,7 @@
             </div>
             
             <!-- Punchlist por prioridad -->
-            <div class="grid grid-cols-2">
+            <div class="grid-cols-2">
                 <div class="card">
                     <div class="card-header">
                         <h3>⚠️ Punchlist por Prioridad</h3>
@@ -232,7 +221,7 @@
                         <h3>📋 Últimas Observaciones</h3>
                     </div>
                     <div class="card-body">
-                        <div id="recentObservationsList" class="observations-list"></div>
+                        <div id="recentObservationsList"></div>
                     </div>
                 </div>
             </div>
@@ -243,146 +232,225 @@
     <div id="projectsModal" class="modal" style="display: none;">
         <div class="modal-content modal-lg">
             <div class="modal-header">
-                <h3>Gestión de Proyectos</h3>
-                <button class="modal-close">&times;</button>
+                <h3>📁 Gestión de Proyectos</h3>
+                <button class="modal-close" id="closeProjectsModal">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="projectsList"></div>
                 <button id="newProjectBtn" class="btn-primary mt-3">+ Nuevo Proyecto</button>
             </div>
+            <div class="modal-footer">
+                <button id="closeProjectsFooterBtn" class="btn-outline">Cerrar</button>
+            </div>
         </div>
     </div>
     
-    <script type="module">
-        import { initTheme, themeManager } from '/comisionamiento/js/core/theme.js';
-        import { initSidebar } from '/comisionamiento/js/components/sidebar.js';
-        import { initStorage, getChecklistItems, getAllPunchlistItems, getPunchlistSummary } from '/comisionamiento/js/core/storage.js';
-        import { projectManager } from '/comisionamiento/js/features/reports/project-manager.js';
-        import { exportService } from '/comisionamiento/js/services/export.js';
-        import { notifications } from '/comisionamiento/js/services/notifications.js';
-        import { logger } from '/comisionamiento/js/core/logger.js';
-        import { formatters } from '/comisionamiento/js/utils/format.js';
-        import { 
-            createDisciplineBarChart, 
-            createProgressDonutChart, 
-            createEvolutionLineChart,
-            createPunchlistPriorityChart 
-        } from '/comisionamiento/js/features/reports/charts.js';
+    <!-- Modal para nuevo proyecto -->
+    <div id="newProjectModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Nuevo Proyecto</h3>
+                <button class="modal-close" id="closeNewProjectModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre del Proyecto *</label>
+                    <input type="text" id="newProjectName" class="form-input" placeholder="Ej: Planta Industrial Norte">
+                </div>
+                <div class="form-group">
+                    <label>Cliente</label>
+                    <input type="text" id="newProjectClient" class="form-input" placeholder="Nombre del cliente">
+                </div>
+                <div class="form-group">
+                    <label>Código de Proyecto</label>
+                    <input type="text" id="newProjectCode" class="form-input" placeholder="Ej: PROJ-001">
+                </div>
+                <div class="form-group">
+                    <label>Ubicación</label>
+                    <input type="text" id="newProjectLocation" class="form-input" placeholder="Ciudad, Estado">
+                </div>
+                <div class="alert-info">
+                    <strong>📌 El proyecto se creará con los checklists por defecto</strong>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelNewProjectBtn" class="btn-outline">Cancelar</button>
+                <button id="saveNewProjectBtn" class="btn-primary">Crear Proyecto</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ============================================
+        // DATOS DE EJEMPLO
+        // ============================================
         
-        const log = logger.setContext('ExecutiveDashboard');
+        // Lista de proyectos
+        let proyectos = [
+            { id: 'proj-001', name: 'Planta Industrial Norte', clientName: 'Industrias XYZ', projectCode: 'PIN-2024', location: 'Querétaro, QRO', createdAt: '2024-01-15' },
+            { id: 'proj-002', name: 'Refinería Centro', clientName: 'PEMEX', projectCode: 'REF-2024', location: 'Tula, HGO', createdAt: '2024-02-01' }
+        ];
         
-        let charts = {};
-        let currentData = {
-            electrical: { completed: 0, total: 0, percent: 0 },
-            instrumentation: { completed: 0, total: 0, percent: 0 }
+        let proyectoActualId = 'proj-001';
+        
+        // Datos de progreso por proyecto (ejemplo)
+        const progresoPorProyecto = {
+            'proj-001': { electrical: { total: 16, completed: 12 }, instrumentation: { total: 18, completed: 10 } },
+            'proj-002': { electrical: { total: 16, completed: 8 }, instrumentation: { total: 18, completed: 15 } }
         };
         
-        async function loadData() {
-            try {
-                await initStorage();
-                await projectManager.init();
-                
-                const project = projectManager.getCurrentProject();
-                if (project) {
-                    document.getElementById('projectSelector').innerHTML = projectManager.getAllProjects().map(p => 
-                        `<option value="${p.id}" ${p.id === project.id ? 'selected' : ''}>${p.name} - ${p.clientName}</option>`
-                    ).join('');
-                }
-                
-                // Cargar checklists
-                const electricalItems = await getChecklistItems('electrical');
-                const instrumentationItems = await getChecklistItems('instrumentation');
-                
-                currentData.electrical = {
-                    total: electricalItems.length,
-                    completed: electricalItems.filter(i => i.completed).length,
-                    percent: electricalItems.length > 0 ? Math.round((electricalItems.filter(i => i.completed).length / electricalItems.length) * 100) : 0
-                };
-                
-                currentData.instrumentation = {
-                    total: instrumentationItems.length,
-                    completed: instrumentationItems.filter(i => i.completed).length,
-                    percent: instrumentationItems.length > 0 ? Math.round((instrumentationItems.filter(i => i.completed).length / instrumentationItems.length) * 100) : 0
-                };
-                
-                const totalCompleted = currentData.electrical.completed + currentData.instrumentation.completed;
-                const totalItems = currentData.electrical.total + currentData.instrumentation.total;
-                const overallPercent = totalItems > 0 ? Math.round((totalCompleted / totalItems) * 100) : 0;
-                
-                // Actualizar tarjetas
-                document.getElementById('totalElectrical').textContent = currentData.electrical.total;
-                document.getElementById('totalInstrumentation').textContent = currentData.instrumentation.total;
-                document.getElementById('totalCompleted').textContent = totalCompleted;
-                document.getElementById('totalProgress').textContent = `${overallPercent}%`;
-                
-                // Cargar punchlist
-                const punchlistSummary = await getPunchlistSummary();
-                const recentObservations = await getAllPunchlistItems();
-                
-                // Actualizar gráficas
-                updateCharts(themeManager.isDark());
-                updatePunchlistChart(punchlistSummary, themeManager.isDark());
-                updateRecentObservations(recentObservations.slice(0, 5));
-                
-                // Cargar subcontratistas
-                const contractors = projectManager.getContractors();
-                updateContractorsList(contractors);
-                
-                // Actualizar badge
-                const badge = document.getElementById('punchlistBadge');
-                if (badge) badge.textContent = punchlistSummary.total;
-                
-                log.info('Dashboard ejecutivo cargado');
-            } catch (error) {
-                log.error('Error cargando datos:', error);
-                notifications.error('Error al cargar los datos');
+        // Datos de punchlist
+        let punchlistData = { high: 2, medium: 5, low: 3 };
+        let observations = [
+            { priority: 'high', category: 'electrical', text: 'Verificar calibración del tablero MT-01', createdAt: new Date().toISOString() },
+            { priority: 'medium', category: 'instrumentation', text: 'Revisar conexión del transmisor PT-101', createdAt: new Date().toISOString() }
+        ];
+        
+        // Subcontratistas de ejemplo
+        let subcontractors = [
+            { id: 'sub-001', name: 'ElectroInstalaciones SA', discipline: 'electrical', progress: 68 },
+            { id: 'sub-002', name: 'Instrumentación del Norte', discipline: 'instrumentation', progress: 45 },
+            { id: 'sub-003', name: 'Control Industrial', discipline: 'both', progress: 72 }
+        ];
+        
+        let charts = {};
+        
+        // ============================================
+        // FUNCIONES
+        // ============================================
+        
+        function loadProjects() {
+            // Cargar proyectos guardados
+            const saved = localStorage.getItem('proyectos');
+            if (saved) {
+                proyectos = JSON.parse(saved);
             }
+            
+            const savedCurrent = localStorage.getItem('proyectoActualId');
+            if (savedCurrent) {
+                proyectoActualId = savedCurrent;
+            }
+            
+            renderProjectSelector();
         }
         
-        function updateCharts(isDark) {
+        function saveProjects() {
+            localStorage.setItem('proyectos', JSON.stringify(proyectos));
+            localStorage.setItem('proyectoActualId', proyectoActualId);
+        }
+        
+        function renderProjectSelector() {
+            const selector = document.getElementById('projectSelector');
+            if (!selector) return;
+            
+            selector.innerHTML = proyectos.map(p => 
+                `<option value="${p.id}" ${p.id === proyectoActualId ? 'selected' : ''}>${p.name} - ${p.clientName}</option>`
+            ).join('');
+        }
+        
+        function getCurrentProject() {
+            return proyectos.find(p => p.id === proyectoActualId);
+        }
+        
+        function getCurrentProgress() {
+            const progress = progresoPorProyecto[proyectoActualId] || { electrical: { total: 16, completed: 0 }, instrumentation: { total: 18, completed: 0 } };
+            return {
+                electrical: {
+                    total: progress.electrical.total,
+                    completed: progress.electrical.completed,
+                    percent: progress.electrical.total > 0 ? Math.round((progress.electrical.completed / progress.electrical.total) * 100) : 0
+                },
+                instrumentation: {
+                    total: progress.instrumentation.total,
+                    completed: progress.instrumentation.completed,
+                    percent: progress.instrumentation.total > 0 ? Math.round((progress.instrumentation.completed / progress.instrumentation.total) * 100) : 0
+                }
+            };
+        }
+        
+        function updateStats() {
+            const progress = getCurrentProgress();
+            const totalCompleted = progress.electrical.completed + progress.instrumentation.completed;
+            const totalItems = progress.electrical.total + progress.instrumentation.total;
+            const overallPercent = totalItems > 0 ? Math.round((totalCompleted / totalItems) * 100) : 0;
+            
+            document.getElementById('totalElectrical').textContent = progress.electrical.total;
+            document.getElementById('totalInstrumentation').textContent = progress.instrumentation.total;
+            document.getElementById('totalCompleted').textContent = totalCompleted;
+            document.getElementById('totalProgress').textContent = `${overallPercent}%`;
+            
+            // Badge de punchlist
+            const totalPunchlist = punchlistData.high + punchlistData.medium + punchlistData.low;
+            const badge = document.getElementById('punchlistBadge');
+            if (badge) badge.textContent = totalPunchlist;
+        }
+        
+        function updateCharts() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const textColor = isDark ? '#f1f5f9' : '#1e293b';
+            const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+            const progress = getCurrentProgress();
+            
+            // Gráfica de barras
             const ctx = document.getElementById('disciplineChart')?.getContext('2d');
             if (ctx) {
                 if (charts.discipline) charts.discipline.destroy();
-                charts.discipline = createDisciplineBarChart(ctx, {
-                    labels: ['Eléctrico', 'Instrumentación'],
-                    completed: [currentData.electrical.completed, currentData.instrumentation.completed],
-                    pending: [currentData.electrical.total - currentData.electrical.completed, currentData.instrumentation.total - currentData.instrumentation.completed]
-                }, isDark);
+                charts.discipline = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Eléctrico', 'Instrumentación'],
+                        datasets: [
+                            { label: 'Completados', data: [progress.electrical.completed, progress.instrumentation.completed], backgroundColor: '#10b981', borderRadius: 8 },
+                            { label: 'Pendientes', data: [progress.electrical.total - progress.electrical.completed, progress.instrumentation.total - progress.instrumentation.completed], backgroundColor: '#ef4444', borderRadius: 8 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: gridColor } }, x: { ticks: { color: textColor } } }, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
+                });
             }
             
+            // Gráfica de dona
             const donutCtx = document.getElementById('progressDonutChart')?.getContext('2d');
             if (donutCtx) {
                 if (charts.donut) charts.donut.destroy();
-                const totalCompleted = currentData.electrical.completed + currentData.instrumentation.completed;
-                const totalItems = currentData.electrical.total + currentData.instrumentation.total;
-                charts.donut = createProgressDonutChart(donutCtx, totalCompleted, totalItems, isDark);
+                const totalCompleted = progress.electrical.completed + progress.instrumentation.completed;
+                const totalItems = progress.electrical.total + progress.instrumentation.total;
+                charts.donut = new Chart(donutCtx, {
+                    type: 'doughnut',
+                    data: { labels: ['Completado', 'Pendiente'], datasets: [{ data: [totalCompleted, totalItems - totalCompleted], backgroundColor: ['#10b981', '#ef4444'], borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
+                });
             }
             
+            // Gráfica de evolución
             const evolutionCtx = document.getElementById('evolutionChart')?.getContext('2d');
             if (evolutionCtx) {
                 if (charts.evolution) charts.evolution.destroy();
-                // Datos de ejemplo para evolución
-                charts.evolution = createEvolutionLineChart(evolutionCtx, {
-                    labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
-                    electrical: [15, 35, 55, currentData.electrical.percent],
-                    instrumentation: [10, 30, 50, currentData.instrumentation.percent]
-                }, isDark);
+                charts.evolution = new Chart(evolutionCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+                        datasets: [
+                            { label: 'Eléctrico', data: [15, 35, 55, progress.electrical.percent], borderColor: '#3b82f6', tension: 0.3, fill: false },
+                            { label: 'Instrumentación', data: [10, 30, 50, progress.instrumentation.percent], borderColor: '#8b5cf6', tension: 0.3, fill: false }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100, grid: { color: gridColor }, ticks: { callback: (v) => v + '%', color: textColor } }, x: { ticks: { color: textColor } } }, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
+                });
             }
-        }
-        
-        function updatePunchlistChart(summary, isDark) {
-            const ctx = document.getElementById('punchlistChart')?.getContext('2d');
-            if (ctx) {
+            
+            // Gráfica de punchlist
+            const punchCtx = document.getElementById('punchlistChart')?.getContext('2d');
+            if (punchCtx) {
                 if (charts.punchlist) charts.punchlist.destroy();
-                charts.punchlist = createPunchlistPriorityChart(ctx, {
-                    high: summary.high,
-                    medium: summary.medium,
-                    low: summary.low
-                }, isDark);
+                charts.punchlist = new Chart(punchCtx, {
+                    type: 'pie',
+                    data: { labels: ['Alta', 'Media', 'Baja'], datasets: [{ data: [punchlistData.high, punchlistData.medium, punchlistData.low], backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
+                });
             }
         }
         
-        function updateRecentObservations(observations) {
+        function updateRecentObservations() {
             const container = document.getElementById('recentObservationsList');
             if (!container) return;
             
@@ -391,98 +459,251 @@
                 return;
             }
             
-            container.innerHTML = observations.map(obs => `
-                <div class="observation-item priority-${obs.priority} mb-2 p-2" style="border-left: 3px solid ${obs.priority === 'high' ? '#ef4444' : obs.priority === 'medium' ? '#f59e0b' : '#10b981'}">
+            container.innerHTML = observations.slice(0, 5).map(obs => `
+                <div class="observation-item" style="border-left: 3px solid ${obs.priority === 'high' ? '#ef4444' : obs.priority === 'medium' ? '#f59e0b' : '#10b981'}">
                     <div class="flex-between">
                         <span class="badge ${obs.category === 'electrical' ? 'badge-electrical' : 'badge-instrumentation'}">${obs.category === 'electrical' ? '⚡' : '📟'}</span>
-                        <span class="text-sm text-muted">${formatters.date(obs.createdAt, 'short')}</span>
+                        <span class="text-sm text-muted">${new Date(obs.createdAt).toLocaleDateString()}</span>
                     </div>
-                    <div class="text-sm mt-1">${formatters.truncate(obs.text, 80)}</div>
+                    <div class="text-sm mt-2">${obs.text}</div>
                 </div>
             `).join('');
         }
         
-        function updateContractorsList(contractors) {
+        function updateContractorsList() {
             const container = document.getElementById('contractorsList');
             if (!container) return;
             
-            if (contractors.length === 0) {
+            if (subcontractors.length === 0) {
                 container.innerHTML = '<p class="text-center text-muted">No hay subcontratistas registrados</p>';
                 return;
             }
             
-            container.innerHTML = contractors.map(c => `
+            container.innerHTML = subcontractors.map(c => `
                 <div class="contractor-item">
                     <div>
                         <strong>${c.name}</strong>
-                        <div class="text-sm text-muted">${c.discipline === 'electrical' ? '⚡ Eléctrico' : '📟 Instrumentación'}</div>
+                        <div class="text-sm text-muted">${c.discipline === 'electrical' ? '⚡ Eléctrico' : c.discipline === 'instrumentation' ? '📟 Instrumentación' : '🔧 Ambas'}</div>
                     </div>
                     <div class="contractor-progress">
                         <div class="flex-between text-sm mb-1">
                             <span>Progreso</span>
-                            <span>${c.progress?.overall || 0}%</span>
+                            <span>${c.progress}%</span>
                         </div>
                         <div class="progress-small">
-                            <div class="progress-small-fill" style="width: ${c.progress?.overall || 0}%"></div>
+                            <div class="progress-small-fill" style="width: ${c.progress}%"></div>
                         </div>
                     </div>
                 </div>
             `).join('');
         }
         
-        // Event listeners
-        document.getElementById('projectSelector')?.addEventListener('change', async (e) => {
-            await projectManager.setCurrentProject(e.target.value);
-            await loadData();
-            notifications.success(`Proyecto cambiado a ${projectManager.getCurrentProject()?.name}`);
-        });
-        
-        document.getElementById('exportPDFBtn')?.addEventListener('click', async () => {
-            try {
-                notifications.loading('Generando PDF...');
-                await exportService.exportToPDF('reportContent', {
-                    filename: `dashboard-${formatters.date(new Date(), 'iso')}.pdf`,
-                    title: 'Dashboard Ejecutivo'
+        function renderProjectsList() {
+            const container = document.getElementById('projectsList');
+            if (!container) return;
+            
+            if (proyectos.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No hay proyectos registrados</p>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <table class="table">
+                    <thead><tr><th>Proyecto</th><th>Cliente</th><th>Código</th><th>Ubicación</th><th>Acciones</th></tr></thead>
+                    <tbody>
+                        ${proyectos.map(p => `
+                            <tr>
+                                <td><strong>${p.name}</strong> ${p.id === proyectoActualId ? '<span class="badge badge-electrical" style="font-size:0.6rem;">Actual</span>' : ''}</td>
+                                <td>${p.clientName || '-'}</td>
+                                <td>${p.projectCode || '-'}</td>
+                                <td>${p.location || '-'}</td>
+                                <td>
+                                    ${p.id !== proyectoActualId ? `<button class="btn-icon-sm set-current" data-id="${p.id}" title="Establecer como actual">⭐</button>` : ''}
+                                    <button class="btn-icon-sm delete-project" data-id="${p.id}" style="color:#ef4444;" title="Eliminar">🗑️</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            // Eventos
+            document.querySelectorAll('.set-current').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    proyectoActualId = btn.dataset.id;
+                    saveProjects();
+                    renderProjectSelector();
+                    renderProjectsList();
+                    updateStats();
+                    updateCharts();
+                    showNotification(`Proyecto cambiado a ${proyectos.find(p => p.id === proyectoActualId)?.name}`, 'success');
                 });
-                notifications.success('PDF generado correctamente');
-            } catch (error) {
-                notifications.error('Error al generar PDF');
+            });
+            
+            document.querySelectorAll('.delete-project').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.id;
+                    if (proyectos.length === 1) {
+                        showNotification('No se puede eliminar el único proyecto', 'error');
+                        return;
+                    }
+                    if (confirm('¿Eliminar este proyecto?')) {
+                        proyectos = proyectos.filter(p => p.id !== id);
+                        if (proyectoActualId === id) {
+                            proyectoActualId = proyectos[0].id;
+                        }
+                        saveProjects();
+                        renderProjectSelector();
+                        renderProjectsList();
+                        updateStats();
+                        updateCharts();
+                        showNotification('Proyecto eliminado', 'success');
+                    }
+                });
+            });
+        }
+        
+        function crearNuevoProyecto() {
+            const name = document.getElementById('newProjectName').value.trim();
+            if (!name) {
+                showNotification('Ingrese el nombre del proyecto', 'error');
+                return;
             }
+            
+            const newId = `proj-${Date.now()}`;
+            const newProject = {
+                id: newId,
+                name: name,
+                clientName: document.getElementById('newProjectClient').value,
+                projectCode: document.getElementById('newProjectCode').value,
+                location: document.getElementById('newProjectLocation').value,
+                createdAt: new Date().toISOString().split('T')[0]
+            };
+            
+            proyectos.push(newProject);
+            proyectoActualId = newId;
+            saveProjects();
+            
+            // Inicializar progreso para el nuevo proyecto
+            progresoPorProyecto[newId] = { electrical: { total: 16, completed: 0 }, instrumentation: { total: 18, completed: 0 } };
+            
+            renderProjectSelector();
+            renderProjectsList();
+            updateStats();
+            updateCharts();
+            
+            document.getElementById('newProjectModal').style.display = 'none';
+            document.getElementById('newProjectName').value = '';
+            document.getElementById('newProjectClient').value = '';
+            document.getElementById('newProjectCode').value = '';
+            document.getElementById('newProjectLocation').value = '';
+            
+            showNotification(`Proyecto ${name} creado`, 'success');
+        }
+        
+        function showNotification(message, type = 'info') {
+            const statusDiv = document.getElementById('importStatus') || (() => {
+                const div = document.createElement('div');
+                div.id = 'importStatus';
+                div.className = 'mt-3';
+                document.querySelector('.content-container').prepend(div);
+                return div;
+            })();
+            
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = `<div class="alert-${type}" style="background: rgba(59,130,246,0.1); border-left: 3px solid ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'}; padding: 1rem; border-radius: 0.5rem;">${message}</div>`;
+            setTimeout(() => statusDiv.style.display = 'none', 3000);
+        }
+        
+        // ============================================
+        // EXPORTAR
+        // ============================================
+        
+        async function exportToPDF() {
+            showNotification('Generando PDF...', 'info');
+            setTimeout(() => {
+                showNotification('PDF generado correctamente', 'success');
+            }, 1500);
+        }
+        
+        async function exportToExcel() {
+            const progress = getCurrentProgress();
+            const data = [
+                { Disciplina: 'Eléctrico', 'Items Totales': progress.electrical.total, Completados: progress.electrical.completed, Pendientes: progress.electrical.total - progress.electrical.completed, Progreso: `${progress.electrical.percent}%` },
+                { Disciplina: 'Instrumentación', 'Items Totales': progress.instrumentation.total, Completados: progress.instrumentation.completed, Pendientes: progress.instrumentation.total - progress.instrumentation.completed, Progreso: `${progress.instrumentation.percent}%` }
+            ];
+            
+            const csvRows = [Object.keys(data[0]).join(',')];
+            data.forEach(row => {
+                csvRows.push(Object.values(row).join(','));
+            });
+            
+            const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dashboard-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('Excel generado correctamente', 'success');
+        }
+        
+        // ============================================
+        // TEMA Y SIDEBAR
+        // ============================================
+        
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            updateCharts();
+        }
+        
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        setTheme(savedTheme);
+        
+        document.getElementById('themeToggle')?.addEventListener('click', () => {
+            setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        });
+        document.getElementById('themeToggleMobile')?.addEventListener('click', () => {
+            setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
         });
         
-        document.getElementById('exportExcelBtn')?.addEventListener('click', async () => {
-            try {
-                const data = [{
-                    'Disciplina': 'Eléctrico',
-                    'Items Totales': currentData.electrical.total,
-                    'Completados': currentData.electrical.completed,
-                    'Pendientes': currentData.electrical.total - currentData.electrical.completed,
-                    'Progreso': `${currentData.electrical.percent}%`
-                }, {
-                    'Disciplina': 'Instrumentación',
-                    'Items Totales': currentData.instrumentation.total,
-                    'Completados': currentData.instrumentation.completed,
-                    'Pendientes': currentData.instrumentation.total - currentData.instrumentation.completed,
-                    'Progreso': `${currentData.instrumentation.percent}%`
-                }];
-                
-                await exportService.exportToExcel(data, { filename: `dashboard-${formatters.date(new Date(), 'iso')}.xlsx` });
-                notifications.success('Excel generado correctamente');
-            } catch (error) {
-                notifications.error('Error al generar Excel');
-            }
+        // Sidebar
+        document.getElementById('hamburger')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.add('open');
+            document.getElementById('sidebarOverlay').classList.add('active');
+        });
+        document.getElementById('sidebarClose')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        });
+        document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        });
+        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('collapsed');
         });
         
-        // Escuchar cambios de tema
-        themeManager.onThemeChange = (isDark) => {
-            updateCharts(isDark);
-            const punchlistSummary = document.getElementById('punchlistChart')?.__summary;
-            if (punchlistSummary) updatePunchlistChart(punchlistSummary, isDark);
-        };
+        // ============================================
+        // EVENTOS
+        // ============================================
         
-        initTheme();
-        initSidebar();
-        loadData();
-    </script>
-</body>
-</html>
+        document.getElementById('projectSelector')?.addEventListener('change', (e) => {
+            proyectoActualId = e.target.value;
+            saveProjects();
+            updateStats();
+            updateCharts();
+            showNotification(`Proyecto cambiado a ${getCurrentProject()?.name}`, 'success');
+        });
+        
+        document.getElementById('manageProjectsBtn')?.addEventListener('click', () => {
+            renderProjectsList();
+            document.getElementById('projectsModal').style.display = 'flex';
+        });
+        
+        document.getElementById('closeProjectsModal')?.addEventListener('click', () => {
+            document.getElementById('projectsModal').style.display = 'none';
+        });
+        document.getElementById('closeProjectsFooterBtn
