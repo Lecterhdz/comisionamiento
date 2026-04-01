@@ -49,6 +49,16 @@
             border-bottom: 1px solid var(--border-color);
         }
         .critical-badge { background: #ef4444; color: white; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.7rem; }
+        .btn-icon-sm { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); }
+        .btn-icon-sm:hover { background: var(--bg-tertiary); }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 1rem; }
+        .mt-4 { margin-top: 1.5rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .ml-2 { margin-left: 0.5rem; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .alert-success { background: rgba(16,185,129,0.1); border-left: 3px solid #10b981; padding: 1rem; border-radius: 0.5rem; }
+        .alert-error { background: rgba(239,68,68,0.1); border-left: 3px solid #ef4444; padding: 1rem; border-radius: 0.5rem; }
     </style>
 </head>
 <body>
@@ -133,11 +143,71 @@
         </div>
     </div>
     
-    <script type="module">
-        import { getAllSystems, getSystemsByDiscipline, createCustomSystem, updateSystem, deleteSystem } from '/comisionamiento/js/data/checklists-base.js';
+    <script>
+        // ============================================
+        // DATOS BASE (simulados para demo)
+        // ============================================
+        
+        let checklistsBase = {
+            'tablero-media-tension': {
+                id: 'tablero-media-tension',
+                nombre: 'Tablero de Media Tensión',
+                disciplina: 'electrical',
+                categoria: 'tableros',
+                items: [
+                    { id: 'MT-001', item: 'Verificación de fijación y nivelación del tablero', norm: 'NOM-001-SEDE-2012', critical: true },
+                    { id: 'MT-002', item: 'Verificación de espacio de trabajo', norm: 'NOM-001-SEDE-2012', critical: true }
+                ]
+            },
+            'tablero-baja-tension': {
+                id: 'tablero-baja-tension',
+                nombre: 'Tablero de Baja Tensión',
+                disciplina: 'electrical',
+                categoria: 'tableros',
+                items: [
+                    { id: 'BT-001', item: 'Verificación de fijación', norm: 'NOM-001-SEDE-2012', critical: true },
+                    { id: 'BT-002', item: 'Verificación de protecciones', norm: 'NOM-001-SEDE-2012', critical: true }
+                ]
+            }
+        };
         
         let currentEditingId = null;
         let itemsList = [];
+        
+        function getAllSystems() {
+            return Object.values(checklistsBase);
+        }
+        
+        function getSystemById(id) {
+            return checklistsBase[id];
+        }
+        
+        function createCustomSystem(systemData) {
+            const newId = `custom-${Date.now()}`;
+            checklistsBase[newId] = {
+                id: newId,
+                ...systemData,
+                isCustom: true,
+                createdAt: new Date().toISOString()
+            };
+            return checklistsBase[newId];
+        }
+        
+        function updateSystem(systemId, updates) {
+            if (checklistsBase[systemId]) {
+                checklistsBase[systemId] = { ...checklistsBase[systemId], ...updates, updatedAt: new Date().toISOString() };
+                return checklistsBase[systemId];
+            }
+            return null;
+        }
+        
+        function deleteSystem(systemId) {
+            if (checklistsBase[systemId]?.isCustom) {
+                delete checklistsBase[systemId];
+                return true;
+            }
+            return false;
+        }
         
         function renderSystems() {
             const systems = getAllSystems();
@@ -153,7 +223,6 @@
                 ${renderSystemGroup(instrumentationSystems)}
             `;
             
-            // Eventos de edición y eliminación
             document.querySelectorAll('.edit-system').forEach(btn => {
                 btn.addEventListener('click', () => editSystem(btn.dataset.id));
             });
@@ -181,7 +250,7 @@
                             <strong>${s.nombre}</strong>
                             <span class="badge-discipline badge-${s.disciplina} ml-2">${s.disciplina === 'electrical' ? 'Eléctrico' : 'Instrumentación'}</span>
                             ${s.categoria ? `<span class="text-sm text-muted ml-2">${s.categoria}</span>` : ''}
-                            ${s.isCustom ? '<span class="badge badge-warning ml-2" style="background:#f59e0b;">Personalizado</span>' : ''}
+                            ${s.isCustom ? '<span class="badge-discipline" style="background:#f59e0b; color:white; margin-left:0.5rem;">Personalizado</span>' : ''}
                         </div>
                         <div>
                             <button class="btn-icon-sm edit-system" data-id="${s.id}" title="Editar">✏️</button>
@@ -191,7 +260,7 @@
                     <div class="items-list">
                         ${s.items.map(item => `
                             <div class="item-row">
-                                <span>• ${item.item}</span>
+                                <span>• ${escapeHtml(item.item)}</span>
                                 ${item.critical ? '<span class="critical-badge">CRÍTICO</span>' : ''}
                                 <span class="text-xs text-muted">(${item.norm})</span>
                             </div>
@@ -202,8 +271,7 @@
         }
         
         function editSystem(id) {
-            const systems = getAllSystems();
-            const system = systems.find(s => s.id === id);
+            const system = getSystemById(id);
             if (!system) return;
             
             currentEditingId = id;
@@ -220,6 +288,8 @@
         
         function renderItemsEditor() {
             const container = document.getElementById('itemsEditor');
+            if (!container) return;
+            
             container.innerHTML = itemsList.map((item, idx) => `
                 <div class="item-row" style="margin-bottom: 0.5rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 0.5rem;">
                     <div style="flex: 1;">
@@ -235,7 +305,6 @@
                 </div>
             `).join('');
             
-            // Eventos
             document.querySelectorAll('.item-text').forEach(input => {
                 input.addEventListener('change', (e) => {
                     const idx = parseInt(e.target.dataset.idx);
@@ -325,11 +394,13 @@
                 const div = document.createElement('div');
                 div.id = 'importStatus';
                 div.className = 'mt-3';
-                document.querySelector('.content-container').prepend(div);
+                const container = document.querySelector('.content-container');
+                if (container) container.prepend(div);
                 return div;
             })();
+            
             statusDiv.style.display = 'block';
-            statusDiv.innerHTML = `<div class="alert-${type}" style="background: rgba(59,130,246,0.1); border-left: 3px solid ${type === 'success' ? '#10b981' : '#ef4444'}; padding: 1rem; border-radius: 0.5rem;">${message}</div>`;
+            statusDiv.innerHTML = `<div class="alert-${type}">${message}</div>`;
             setTimeout(() => statusDiv.style.display = 'none', 3000);
         }
         
@@ -338,7 +409,59 @@
             return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
         }
         
-        // Eventos
+        // ============================================
+        // TEMA CLARO/OSCURO
+        // ============================================
+        
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            // Actualizar texto del botón
+            const themeToggle = document.getElementById('themeToggle');
+            const themeToggleMobile = document.getElementById('themeToggleMobile');
+            if (themeToggle) {
+                const textSpan = themeToggle.querySelector('.theme-text');
+                if (textSpan) textSpan.textContent = theme === 'dark' ? 'Modo claro' : 'Modo oscuro';
+            }
+            if (themeToggleMobile) {
+                themeToggleMobile.textContent = theme === 'dark' ? '☀️' : '🌙';
+            }
+        }
+        
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        setTheme(savedTheme);
+        
+        document.getElementById('themeToggle')?.addEventListener('click', () => {
+            setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        });
+        document.getElementById('themeToggleMobile')?.addEventListener('click', () => {
+            setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        });
+        
+        // ============================================
+        // SIDEBAR
+        // ============================================
+        
+        document.getElementById('hamburger')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.add('open');
+            document.getElementById('sidebarOverlay').classList.add('active');
+        });
+        document.getElementById('sidebarClose')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        });
+        document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        });
+        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        });
+        
+        // ============================================
+        // EVENTOS
+        // ============================================
+        
         document.getElementById('addSystemBtn')?.addEventListener('click', () => {
             resetForm();
             document.getElementById('systemModal').style.display = 'flex';
@@ -348,4 +471,21 @@
         document.getElementById('closeModalBtn')?.addEventListener('click', () => {
             document.getElementById('systemModal').style.display = 'none';
         });
-        document.getElementById('cancelModalBtn')?.
+        document.getElementById('cancelModalBtn')?.addEventListener('click', () => {
+            document.getElementById('systemModal').style.display = 'none';
+        });
+        
+        // Cerrar modal al hacer clic fuera
+        window.addEventListener('click', (e) => {
+            if (e.target.id === 'systemModal') e.target.style.display = 'none';
+        });
+        
+        // ============================================
+        // INICIALIZAR
+        // ============================================
+        
+        renderSystems();
+        console.log('Admin checklist cargado');
+    </script>
+</body>
+</html>
