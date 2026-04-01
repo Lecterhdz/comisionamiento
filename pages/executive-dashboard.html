@@ -23,6 +23,9 @@
     <link rel="stylesheet" href="/comisionamiento/css/components/forms.css">
     <link rel="stylesheet" href="/comisionamiento/css/components/modals.css">
     
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
     <style>
         .stat-card {
             text-align: center;
@@ -93,6 +96,12 @@
             padding: 1rem;
             border-radius: 0.5rem;
         }
+        .alert-warning {
+            background: rgba(245,158,11,0.1);
+            border-left: 3px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
         .form-group {
             margin-bottom: 1rem;
         }
@@ -142,6 +151,11 @@
         .grid-cols-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
         .grid-cols-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
         code { background: var(--bg-tertiary); padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.8rem; }
+        .progress-small { height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; }
+        .progress-small-fill { height: 100%; background: var(--primary-500); border-radius: 3px; transition: width 0.3s; }
+        [data-theme="dark"] .progress-small-fill { background: var(--accent-neon); }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+        .prorroga-item { border-left: 3px solid #f59e0b; padding: 0.75rem; background: var(--bg-secondary); border-radius: 0.5rem; margin-bottom: 0.5rem; }
         
         @media (max-width: 768px) {
             .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
@@ -202,19 +216,8 @@
                 </div>
             </div>
             
-            <!-- GESTIÓN DE PROVEEDORES -->
-            <div class="card mb-4">
-                <div class="card-header flex-between">
-                    <h3>👥 Proveedores Registrados</h3>
-                    <button id="manageContractorsBtn" class="btn-primary btn-sm">+ Nuevo Proveedor</button>
-                </div>
-                <div class="card-body">
-                    <div id="proveedoresList"></div>
-                </div>
-            </div>
-            
-            <!-- ESTADÍSTICAS -->
-            <div class="grid-cols-4">
+            <!-- ESTADÍSTICAS GENERALES -->
+            <div class="grid-cols-4 mb-4">
                 <div class="stat-card">
                     <div class="stat-value" id="totalProveedores">0</div>
                     <div class="stat-label">Proveedores</div>
@@ -232,6 +235,39 @@
                     <div class="stat-label">Progreso General</div>
                 </div>
             </div>
+            
+            <!-- GRÁFICA DE PROGRESO POR PROVEEDOR -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>📊 Progreso por Proveedor</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- TABLA DE PROVEEDORES CON DETALLE -->
+            <div class="card mb-4">
+                <div class="card-header flex-between">
+                    <h3>👥 Proveedores Registrados</h3>
+                    <button id="manageContractorsBtn" class="btn-primary btn-sm">+ Nuevo Proveedor</button>
+                </div>
+                <div class="card-body">
+                    <div id="proveedoresList"></div>
+                </div>
+            </div>
+            
+            <!-- PRÓRROGAS ACTIVAS -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>⚠️ Prórrogas Activas</h3>
+                </div>
+                <div class="card-body">
+                    <div id="prorrogasList"></div>
+                </div>
+            </div>
         </div>
     </main>
     
@@ -243,7 +279,6 @@
                 <button class="modal-close" id="closeNewModalBtn">&times;</button>
             </div>
             <div class="modal-body">
-                <!-- Datos del proveedor -->
                 <div class="grid-cols-2">
                     <div class="form-group">
                         <label>Nombre de la Empresa *</label>
@@ -271,7 +306,6 @@
                     </div>
                 </div>
                 
-                <!-- Selección de checklists -->
                 <div class="mt-4">
                     <h4>📋 Checklists a asignar</h4>
                     <p class="text-sm text-muted mb-3">Seleccione los sistemas/equipos que este proveedor debe completar</p>
@@ -315,6 +349,8 @@
         let availableChecklists = [];
         let selectedChecklists = new Map();
         let currentFilter = 'all';
+        let progressChart = null;
+        let reportesRecibidos = [];
         
         // ============================================
         // PROVEEDORES
@@ -325,26 +361,80 @@
             if (saved) {
                 clientProveedores = JSON.parse(saved);
             }
+            
+            const savedReportes = localStorage.getItem('reportesRecibidos');
+            if (savedReportes) {
+                reportesRecibidos = JSON.parse(savedReportes);
+            }
+            
             updateStats();
             renderProveedoresList();
+            updateProgressChart();
+            renderProrrogas();
         }
         
         function saveProveedores() {
             localStorage.setItem('client_proveedores', JSON.stringify(clientProveedores));
             updateStats();
+            updateProgressChart();
+            renderProveedoresList();
         }
         
         function updateStats() {
             document.getElementById('totalProveedores').textContent = clientProveedores.length;
-            const totalReportes = localStorage.getItem('totalReportes') || '0';
-            const totalProrrogas = localStorage.getItem('totalProrrogas') || '0';
-            document.getElementById('totalReportes').textContent = totalReportes;
-            document.getElementById('totalProrrogas').textContent = totalProrrogas;
+            document.getElementById('totalReportes').textContent = reportesRecibidos.length;
+            
+            const prorrogas = reportesRecibidos.filter(r => r.isProrroga).length;
+            document.getElementById('totalProrrogas').textContent = prorrogas;
             
             let totalProgress = 0;
             clientProveedores.forEach(p => { totalProgress += p.progress || 0; });
             const avgProgress = clientProveedores.length > 0 ? Math.round(totalProgress / clientProveedores.length) : 0;
             document.getElementById('totalProgreso').textContent = `${avgProgress}%`;
+        }
+        
+        function updateProgressChart() {
+            const ctx = document.getElementById('progressChart')?.getContext('2d');
+            if (!ctx) return;
+            
+            if (progressChart) progressChart.destroy();
+            
+            const labels = clientProveedores.map(p => p.nombre);
+            const data = clientProveedores.map(p => p.progress || 0);
+            const colors = data.map((_, i) => `hsl(${i * 40}, 70%, 50%)`);
+            
+            progressChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Progreso (%)',
+                        data: data,
+                        backgroundColor: colors,
+                        borderRadius: 8,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: { display: true, text: 'Progreso (%)' },
+                            ticks: { callback: (v) => v + '%' }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.raw}% completado`
+                            }
+                        }
+                    }
+                }
+            });
         }
         
         function renderProveedoresList() {
@@ -359,24 +449,30 @@
             container.innerHTML = `
                 <table class="table">
                     <thead>
-                        <tr><th>Empresa</th><th>ID</th><th>Licencia</th><th>Contacto</th><th>Disciplina</th><th>Checklists</th><th>Progreso</th><th>Acciones</th>
+                        <tr><th>Empresa</th><th>ID / Licencia</th><th>Contacto</th><th>Disciplina</th><th>Checklists</th><th>Progreso</th><th>Último Reporte</th><th>Acciones</th>
                     </thead>
                     <tbody>
-                        ${clientProveedores.map(p => `
-                            <tr>
+                        ${clientProveedores.map(p => {
+                            const lastReport = reportesRecibidos.filter(r => r.proveedorId === p.id).sort((a,b) => new Date(b.fecha) - new Date(a.fecha))[0];
+                            const checklistsCount = p.checklistsAsignados?.length || 0;
+                            return `
+                             <tr>
                                 <td><strong>${escapeHtml(p.nombre)}</strong><br><span class="text-xs text-muted">${new Date(p.createdAt).toLocaleDateString()}</span></td>
-                                <td><code>${p.id}</code></td>
-                                <td><code>${p.licencia}</code></td>
-                                <td>${escapeHtml(p.contacto || '-')}</td>
+                                <td><code>${p.id}</code><br><code class="text-xs">${p.licencia}</code></td>
+                                <td>${escapeHtml(p.contacto || '-')}<br><span class="text-xs">${escapeHtml(p.email || '')}</span></td>
                                 <td>${p.disciplina === 'electrical' ? '⚡ Eléctrico' : p.disciplina === 'instrumentation' ? '📟 Instrumentación' : '🔧 Ambas'}</td>
-                                <td class="text-center">${p.checklistsAsignados?.length || 0}</td>
-                                <td><div class="progress-small" style="width: 80px;"><div class="progress-small-fill" style="width: ${p.progress || 0}%; height: 4px;"></div></div> ${p.progress || 0}%</td>
+                                <td class="text-center">${checklistsCount}</td>
+                                <td>
+                                    <div class="flex-between text-sm mb-1"><span>${p.progress || 0}%</span></div>
+                                    <div class="progress-small" style="width: 100px;"><div class="progress-small-fill" style="width: ${p.progress || 0}%"></div></div>
+                                </td>
+                                <td class="text-sm">${lastReport ? new Date(lastReport.fecha).toLocaleDateString() : 'Sin reportes'}</td>
                                 <td>
                                     <button class="btn-icon-sm download-config" data-id="${p.id}" title="Descargar archivo de configuración">📥</button>
                                     <button class="btn-icon-sm delete-contractor" data-id="${p.id}" style="color:#ef4444;" title="Eliminar">🗑️</button>
                                 </td>
-                             </tr>
-                        `).join('')}
+                            </tr>
+                        `}).join('')}
                     </tbody>
                 </table>
             `;
@@ -398,6 +494,29 @@
                     }
                 });
             });
+        }
+        
+        function renderProrrogas() {
+            const container = document.getElementById('prorrogasList');
+            if (!container) return;
+            
+            const prorrogas = reportesRecibidos.filter(r => r.isProrroga).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+            
+            if (prorrogas.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No hay prórrogas registradas</p>';
+                return;
+            }
+            
+            container.innerHTML = prorrogas.map(r => `
+                <div class="prorroga-item">
+                    <div class="flex-between">
+                        <strong>📅 ${r.proveedorNombre}</strong>
+                        <span class="text-xs text-muted">${new Date(r.fecha).toLocaleDateString()}</span>
+                    </div>
+                    <div class="text-sm mt-1">Motivo: ${r.prorrogaMotivo || 'No especificado'}</div>
+                    ${r.detalle ? `<div class="text-xs text-muted mt-1">${r.detalle}</div>` : ''}
+                </div>
+            `).join('');
         }
         
         function generarArchivoProveedor(proveedor) {
@@ -516,11 +635,9 @@
                 return;
             }
             
-            // Generar ID y Licencia
             const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
             const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
             
-            // Construir checklists asignados
             const checklistsAsignados = [];
             for (const [systemId, config] of selectedChecklists.entries()) {
                 const sistema = availableChecklists.find(c => c.id === systemId);
@@ -553,11 +670,8 @@
             clientProveedores.push(nuevoProveedor);
             saveProveedores();
             renderProveedoresList();
-            
-            // Generar archivo
             generarArchivoProveedor(nuevoProveedor);
             
-            // Cerrar modal y limpiar
             document.getElementById('newContractorModal').style.display = 'none';
             document.getElementById('newContractorName').value = '';
             document.getElementById('newContractorContact').value = '';
@@ -594,23 +708,46 @@
                     throw new Error('Licencia no válida');
                 }
                 
-                statusDiv.innerHTML = `<div class="alert-success">✅ Reporte importado de: ${data.proveedor.nombre}</div>`;
+                // Calcular progreso del proveedor basado en sus checklists
+                let totalItems = 0;
+                let totalCompleted = 0;
                 
-                let totalReportes = parseInt(localStorage.getItem('totalReportes') || '0') + 1;
-                localStorage.setItem('totalReportes', totalReportes);
+                if (data.checklists && data.checklists.length > 0) {
+                    for (const checklist of data.checklists) {
+                        if (checklist.items) {
+                            totalItems += checklist.items.length;
+                            totalCompleted += checklist.items.filter(i => i.completed).length;
+                        }
+                    }
+                }
+                
+                const progress = totalItems > 0 ? Math.round((totalCompleted / totalItems) * 100) : 0;
+                existingProvider.progress = progress;
+                existingProvider.lastReportDate = new Date().toISOString();
+                
+                // Guardar reporte
+                const nuevoReporte = {
+                    id: `REP-${Date.now()}`,
+                    proveedorId: data.proveedor.id,
+                    proveedorNombre: data.proveedor.nombre,
+                    fecha: new Date().toISOString(),
+                    progress: progress,
+                    isProrroga: data.metadata?.isProrroga || false,
+                    prorrogaMotivo: data.metadata?.prorrogaMotivo || null,
+                    detalle: `${totalCompleted}/${totalItems} items completados`
+                };
+                
+                reportesRecibidos.push(nuevoReporte);
+                localStorage.setItem('reportesRecibidos', JSON.stringify(reportesRecibidos));
+                
+                saveProveedores();
+                
+                statusDiv.innerHTML = `<div class="alert-success">✅ Reporte importado de: ${data.proveedor.nombre} (${progress}% completado)</div>`;
                 
                 if (data.metadata?.isProrroga) {
-                    let totalProrrogas = parseInt(localStorage.getItem('totalProrrogas') || '0') + 1;
-                    localStorage.setItem('totalProrrogas', totalProrrogas);
+                    statusDiv.innerHTML += `<div class="alert-warning mt-2">⚠️ Prórroga: ${data.metadata.prorrogaMotivo || 'Motivo no especificado'}</div>`;
                 }
                 
-                if (data.estadisticas?.porcentaje) {
-                    existingProvider.progress = data.estadisticas.porcentaje;
-                    saveProveedores();
-                    renderProveedoresList();
-                }
-                
-                updateStats();
                 setTimeout(() => statusDiv.style.display = 'none', 3000);
                 
             } catch (error) {
@@ -651,6 +788,7 @@
                 if (textSpan) textSpan.textContent = theme === 'dark' ? 'Modo claro' : 'Modo oscuro';
             }
             if (themeToggleMobile) themeToggleMobile.textContent = theme === 'dark' ? '☀️' : '🌙';
+            updateProgressChart();
         }
         
         const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -731,7 +869,6 @@
             renderChecklistsSelection();
         });
         
-        // File upload
         const fileUploadArea = document.getElementById('fileUploadArea');
         const fileInput = document.getElementById('fileInput');
         fileUploadArea?.addEventListener('click', () => fileInput?.click());
