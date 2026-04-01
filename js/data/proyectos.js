@@ -74,7 +74,36 @@ export function desactivarProveedor(id) {
 export function getAllProveedores() {
     return [...proveedores];
 }
+// ============================================
+// VALIDAR ARCHIVO DE PROVEEDOR
+// ============================================
 
+export function validarArchivoProveedor(archivoData) {
+    // Verificar estructura básica
+    if (!archivoData.validacion || !archivoData.proveedor) {
+        return { valido: false, error: 'Archivo no válido: falta información de validación' };
+    }
+    
+    const { proveedorId, licencia } = archivoData.validacion;
+    
+    // Aquí podrías validar contra una base de datos de proveedores autorizados
+    // Por ahora, validamos que no estén vacíos
+    if (!proveedorId || !licencia) {
+        return { valido: false, error: 'ID o Licencia inválidos' };
+    }
+    
+    // Validar formato básico
+    if (!proveedorId.startsWith('CTR-') || !licencia.startsWith('COM-')) {
+        return { valido: false, error: 'Formato de ID o Licencia inválido' };
+    }
+    
+    return {
+        valido: true,
+        proveedor: archivoData.proveedor,
+        proyecto: archivoData.proyecto || null,
+        checklists: archivoData.checklists || []
+    };
+}
 // ============================================
 // GESTIÓN DE PROYECTOS
 // ============================================
