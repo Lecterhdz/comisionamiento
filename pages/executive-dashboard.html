@@ -260,50 +260,78 @@
         </div>
     </div>
     
-    <!-- Modal para nuevo proveedor -->
+    <!-- Modal para nuevo proveedor - AHORA CON SELECCIÓN DE CHECKLISTS -->
     <div id="newContractorModal" class="modal" style="display: none;">
-        <div class="modal-content">
+        <div class="modal-content modal-lg">
             <div class="modal-header">
                 <h3>➕ Nuevo Proveedor</h3>
                 <button class="modal-close" id="closeNewModalBtn">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Nombre de la Empresa *</label>
-                    <input type="text" id="newContractorName" class="form-input" placeholder="Ej: ElectroInstalaciones SA">
+                <!-- Datos del proveedor -->
+                <div class="grid-cols-2">
+                    <div class="form-group">
+                        <label>Nombre de la Empresa *</label>
+                        <input type="text" id="newContractorName" class="form-input" placeholder="Ej: ElectroInstalaciones SA">
+                    </div>
+                    <div class="form-group">
+                        <label>Disciplina *</label>
+                        <select id="newContractorDiscipline" class="form-select">
+                            <option value="electrical">⚡ Eléctrico</option>
+                            <option value="instrumentation">📟 Instrumentación</option>
+                            <option value="both">🔧 Ambas</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Persona de Contacto</label>
+                        <input type="text" id="newContractorContact" class="form-input" placeholder="Nombre del responsable">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="newContractorEmail" class="form-input" placeholder="correo@empresa.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="tel" id="newContractorPhone" class="form-input" placeholder="55 1234 5678">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Persona de Contacto</label>
-                    <input type="text" id="newContractorContact" class="form-input" placeholder="Nombre del responsable">
+                
+                <!-- Selección de checklists para este proveedor -->
+                <div class="mt-4">
+                    <h4>📋 Checklists a asignar</h4>
+                    <p class="text-sm text-muted mb-3">Seleccione los sistemas/equipos que este proveedor debe completar</p>
+                    
+                    <!-- Filtros -->
+                    <div class="flex-between mb-3">
+                        <div>
+                            <button id="filterChecklistAllBtn" class="btn-outline btn-sm">Todos</button>
+                            <button id="filterChecklistElectricalBtn" class="btn-outline btn-sm ml-2">⚡ Eléctricos</button>
+                            <button id="filterChecklistInstrumentationBtn" class="btn-outline btn-sm ml-2">📟 Instrumentación</button>
+                        </div>
+                        <div>
+                            <button id="selectAllChecklistsBtn" class="btn-outline btn-sm">Seleccionar Todos</button>
+                            <button id="deselectAllChecklistsBtn" class="btn-outline btn-sm ml-2">Deseleccionar Todos</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de checklists disponibles -->
+                    <div id="checklistsForContractor" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1rem;">
+                        <p class="text-center text-muted">Cargando checklists...</p>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="newContractorEmail" class="form-input" placeholder="correo@empresa.com">
-                </div>
-                <div class="form-group">
-                    <label>Teléfono</label>
-                    <input type="tel" id="newContractorPhone" class="form-input" placeholder="55 1234 5678">
-                </div>
-                <div class="form-group">
-                    <label>Disciplina</label>
-                    <select id="newContractorDiscipline" class="form-select">
-                        <option value="electrical">⚡ Eléctrico</option>
-                        <option value="instrumentation">📟 Instrumentación</option>
-                        <option value="both">🔧 Ambas</option>
-                    </select>
-                </div>
-                <div class="alert-info">
-                    <strong>📌 Se generará automáticamente:</strong>
+                
+                <div class="alert-info mt-3">
+                    <strong>📌 Se generará:</strong>
                     <ul class="mt-2">
                         <li>ID único del proveedor</li>
                         <li>Clave de licencia</li>
-                        <li>Archivo JSON para que el proveedor importe</li>
+                        <li>Archivo JSON con los checklists seleccionados</li>
                     </ul>
                 </div>
             </div>
             <div class="modal-footer">
                 <button id="cancelNewContractorBtn" class="btn-outline">Cancelar</button>
-                <button id="saveNewContractorBtn" class="btn-primary">Generar y Descargar</button>
+                <button id="saveNewContractorBtn" class="btn-primary">Generar y Enviar Archivo</button>
             </div>
         </div>
     </div>
