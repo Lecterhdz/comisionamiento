@@ -36,41 +36,59 @@
             font-size: 1.75rem;
             margin-top: 0.5rem;
         }
-        .tab-buttons {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .tab-btn {
-            flex: 1;
+        .alert-error {
+            background: rgba(239,68,68,0.1);
+            border-left: 3px solid #ef4444;
             padding: 0.75rem;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-            color: var(--text-secondary);
-            transition: all var(--transition-fast);
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            color: #ef4444;
         }
-        .tab-btn.active {
-            color: var(--primary-500);
-            border-bottom: 2px solid var(--primary-500);
+        .w-100 {
+            width: 100%;
         }
-        [data-theme="dark"] .tab-btn.active {
-            color: var(--accent-neon);
-            border-bottom-color: var(--accent-neon);
+        .mt-3 {
+            margin-top: 1rem;
         }
-        .login-form {
-            display: none;
+        .text-center {
+            text-align: center;
         }
-        .login-form.active {
-            display: block;
+        .text-muted {
+            color: var(--text-tertiary);
         }
         .info-text {
             text-align: center;
             margin-top: 1rem;
             font-size: 0.875rem;
             color: var(--text-tertiary);
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        .btn-primary {
+            background: var(--primary-500);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            background: var(--primary-600);
         }
     </style>
 </head>
@@ -84,83 +102,50 @@
                     <p class="text-muted">Sistema de gestión de comisionamiento</p>
                 </div>
                 
-                <div class="tab-buttons">
-                    <button id="tabContratista" class="tab-btn active">👔 Contratista</button>
+                <!-- Solo formulario de contratista -->
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" id="contratistaUser" class="form-input" placeholder="contratista" value="contratista">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="contratistaPass" class="form-input" placeholder="••••••••" value="comisiona2024">
+                </div>
+                <button id="loginContratistaBtn" class="btn-primary">Ingresar</button>
+                
+                <div class="info-text">
+                    <strong>Demo:</strong> usuario: contratista / contraseña: comisiona2024
                 </div>
                 
-                <!-- Formulario Contratista -->
-                <div id="formContratista" class="login-form active">
-                    <div class="form-group">
-                        <label>Usuario</label>
-                        <input type="text" id="contratistaUser" class="form-input" placeholder="contratista">
-                    </div>
-                    <div class="form-group">
-                        <label>Contraseña</label>
-                        <input type="password" id="contratistaPass" class="form-input" placeholder="••••••••">
-                    </div>
-                    <button id="loginContratistaBtn" class="btn-primary w-100">Ingresar</button>
-                    <div class="info-text">
-                        <strong>Demo:</strong> usuario: contratista / contraseña: comisiona2024
-                    </div>
-                </div>
-                
-                <!-- Formulario Proveedor -->
-                <div id="formProveedor" class="login-form">
-                    <div class="form-group">
-                        <label>ID del Proveedor</label>
-                        <input type="text" id="proveedorId" class="form-input" placeholder="CTR-XXXXXX-XXXX">
-                    </div>
-                    <div class="form-group">
-                        <label>Clave de Licencia</label>
-                        <input type="password" id="proveedorLicencia" class="form-input" placeholder="COM-XXXXXX-XXXXXX">
-                    </div>
-                    <button id="loginProveedorBtn" class="btn-primary w-100">Ingresar</button>
-                    <div class="info-text">
-                        <strong>Nota:</strong> Use el ID y Licencia que le proporcionó el contratista general
-                    </div>
-                </div>
-                
-                <div id="errorMessage" class="alert-error mt-3" style="display: none;"></div>
+                <div id="errorMessage" class="alert-error" style="display: none;"></div>
             </div>
+        </div>
+        
+        <!-- Enlace para proveedores (sin login) -->
+        <div class="text-center mt-3">
+            <p class="text-sm text-muted">
+                ¿Eres proveedor? 
+                <a href="/comisionamiento/pages/subcontractor.html" style="color: var(--primary-500);">Accede directamente al portal</a>
+            </p>
         </div>
     </div>
     
-    <script type="module">
-        import { login, doLogin, ROLES, loadProveedoresAuth } from '/comisionamiento/js/core/auth.js';
+    <script>
+        // Credenciales
+        const USUARIO_CORRECTO = 'contratista';
+        const PASSWORD_CORRECTO = 'comisiona2024';
         
-        // Cargar proveedores registrados
-        loadProveedoresAuth();
-        
-        // Tabs
-        const tabContratista = document.getElementById('tabContratista');
-        const tabProveedor = document.getElementById('tabProveedor');
-        const formContratista = document.getElementById('formContratista');
-        const formProveedor = document.getElementById('formProveedor');
-        const errorDiv = document.getElementById('errorMessage');
+        function doLogin(userData) {
+            localStorage.setItem('user_session', JSON.stringify(userData));
+        }
         
         function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
             setTimeout(() => errorDiv.style.display = 'none', 3000);
         }
         
-        tabContratista.addEventListener('click', () => {
-            tabContratista.classList.add('active');
-            tabProveedor.classList.remove('active');
-            formContratista.classList.add('active');
-            formProveedor.classList.remove('active');
-            errorDiv.style.display = 'none';
-        });
-        
-        tabProveedor.addEventListener('click', () => {
-            tabProveedor.classList.add('active');
-            tabContratista.classList.remove('active');
-            formProveedor.classList.add('active');
-            formContratista.classList.remove('active');
-            errorDiv.style.display = 'none';
-        });
-        
-        // Login Contratista
         document.getElementById('loginContratistaBtn').addEventListener('click', () => {
             const usuario = document.getElementById('contratistaUser').value.trim();
             const password = document.getElementById('contratistaPass').value.trim();
@@ -170,59 +155,29 @@
                 return;
             }
             
-            const result = login(usuario, password, ROLES.CONTRATISTA);
-            
-            if (result.valido) {
+            if (usuario === USUARIO_CORRECTO && password === PASSWORD_CORRECTO) {
                 doLogin({
                     id: usuario,
-                    nombre: result.nombre,
-                    rol: result.rol,
+                    nombre: 'Contratista General',
+                    rol: 'contratista',
                     loginTime: new Date().toISOString()
                 });
                 window.location.href = '/comisionamiento/index.html';
             } else {
-                showError(result.error);
+                showError('Usuario o contraseña incorrectos');
             }
         });
         
-        // Login Proveedor
-        document.getElementById('loginProveedorBtn').addEventListener('click', () => {
-            const proveedorId = document.getElementById('proveedorId').value.trim();
-            const licencia = document.getElementById('proveedorLicencia').value.trim();
-            
-            if (!proveedorId || !licencia) {
-                showError('Ingrese ID y Licencia del proveedor');
-                return;
-            }
-            
-            const result = login(proveedorId, licencia, ROLES.PROVEEDOR);
-            
-            if (result.valido) {
-                doLogin({
-                    id: result.proveedor.id,
-                    nombre: result.proveedor.nombre,
-                    rol: result.rol,
-                    proveedorId: result.proveedor.id,
-                    licencia: result.proveedor.licencia,
-                    loginTime: new Date().toISOString()
-                });
-                window.location.href = '/comisionamiento/pages/subcontractor.html';
-            } else {
-                showError(result.error);
-            }
-        });
-        
-        // Si ya hay sesión, redirigir
-        import('/comisionamiento/js/core/auth.js').then(({ isAuthenticated, getCurrentUser }) => {
-            if (isAuthenticated()) {
-                const user = getCurrentUser();
+        // Si ya hay sesión de contratista, redirigir
+        const session = localStorage.getItem('user_session');
+        if (session) {
+            try {
+                const user = JSON.parse(session);
                 if (user.rol === 'contratista') {
                     window.location.href = '/comisionamiento/index.html';
-                } else if (user.rol === 'proveedor') {
-                    window.location.href = '/comisionamiento/pages/subcontractor.html';
                 }
-            }
-        });
+            } catch(e) {}
+        }
         
         // Tema
         const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
