@@ -7,8 +7,8 @@
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <title>Dashboard Ejecutivo - Comisionamiento PWA</title>
     
-    <!-- CSS Core - CORREGIDO: usando subcarpetas -->
-    <link rel="stylesheet" href="/comisionamiento/css/variables.css">
+    <!-- CSS Core -->
+    <link rel="stylesheet" href="/comisionamiento/css/core/variables.css">
     <link rel="stylesheet" href="/comisionamiento/css/core/reset.css">
     <link rel="stylesheet" href="/comisionamiento/css/core/utilities.css">
     
@@ -48,6 +48,62 @@
         .btn-icon-sm { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); }
         .btn-icon-sm:hover { background: var(--bg-tertiary); }
         .modal-footer { padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: var(--spacing-sm); background-color: var(--bg-tertiary); }
+        
+        /* Estilos para modal - Asegurar visibilidad */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: var(--bg-primary);
+            border-radius: 1rem;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-color);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-tertiary);
+        }
+        .modal-header h3 { margin: 0; }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .modal-body { padding: 1.5rem; }
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid #3b82f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -138,76 +194,34 @@
             
             <!-- Tarjetas de resumen -->
             <div class="grid grid-cols-4 mb-4">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalProveedores">0</div>
-                    <div class="stat-label">Proveedores</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="totalReportes">0</div>
-                    <div class="stat-label">Reportes Recibidos</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="totalProrrogas">0</div>
-                    <div class="stat-label">Prórrogas</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="totalProgreso">0%</div>
-                    <div class="stat-label">Progreso General</div>
-                </div>
+                <div class="stat-card"><div class="stat-value" id="totalProveedores">0</div><div class="stat-label">Proveedores</div></div>
+                <div class="stat-card"><div class="stat-value" id="totalReportes">0</div><div class="stat-label">Reportes Recibidos</div></div>
+                <div class="stat-card"><div class="stat-value" id="totalProrrogas">0</div><div class="stat-label">Prórrogas</div></div>
+                <div class="stat-card"><div class="stat-value" id="totalProgreso">0%</div><div class="stat-label">Progreso General</div></div>
             </div>
             
             <!-- Gráficas principales -->
             <div class="grid grid-cols-2 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📊 Progreso por Etapa</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container">
-                            <canvas id="etapasChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h3>🎯 Progreso por Sistema</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container">
-                            <canvas id="sistemasChart"></canvas>
-                        </div>
-                    </div>
-                </div>
+                <div class="card"><div class="card-header"><h3>📊 Progreso por Etapa</h3></div><div class="card-body"><div class="chart-container"><canvas id="etapasChart"></canvas></div></div></div>
+                <div class="card"><div class="card-header"><h3>🎯 Progreso por Sistema</h3></div><div class="card-body"><div class="chart-container"><canvas id="sistemasChart"></canvas></div></div></div>
             </div>
             
             <!-- Proveedores y su progreso -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h3>👥 Progreso por Proveedor</h3>
-                </div>
-                <div class="card-body">
-                    <div id="proveedoresList" class="proveedores-list"></div>
-                </div>
+                <div class="card-header"><h3>👥 Progreso por Proveedor</h3></div>
+                <div class="card-body"><div id="proveedoresList" class="proveedores-list"></div></div>
             </div>
             
             <!-- Reportes por etapa -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h3>📋 Reportes por Etapa</h3>
-                </div>
-                <div class="card-body">
-                    <div id="reportesPorEtapa"></div>
-                </div>
+                <div class="card-header"><h3>📋 Reportes por Etapa</h3></div>
+                <div class="card-body"><div id="reportesPorEtapa"></div></div>
             </div>
             
             <!-- Prórrogas activas -->
             <div class="card">
-                <div class="card-header">
-                    <h3>⚠️ Prórrogas Activas</h3>
-                </div>
-                <div class="card-body">
-                    <div id="prorrogasList"></div>
-                </div>
+                <div class="card-header"><h3>⚠️ Prórrogas Activas</h3></div>
+                <div class="card-body"><div id="prorrogasList"></div></div>
             </div>
         </div>
     </main>
@@ -217,7 +231,7 @@
         <div class="modal-content modal-lg">
             <div class="modal-header">
                 <h3>👥 Gestionar Proveedores</h3>
-                <button class="modal-close">&times;</button>
+                <button class="modal-close" onclick="document.getElementById('manageContractorsModal').style.display='none'">&times;</button>
             </div>
             <div class="modal-body">
                 <button id="newContractorBtn" class="btn-primary mb-3">+ Nuevo Proveedor</button>
@@ -234,41 +248,21 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>➕ Nuevo Proveedor</h3>
-                <button class="modal-close">&times;</button>
+                <button class="modal-close" onclick="document.getElementById('newContractorModal').style.display='none'">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Nombre de la Empresa *</label>
-                    <input type="text" id="newContractorName" class="form-input" placeholder="Nombre del proveedor">
-                </div>
-                <div class="form-group">
-                    <label>Persona de Contacto</label>
-                    <input type="text" id="newContractorContact" class="form-input" placeholder="Nombre del responsable">
-                </div>
-                <div class="form-group">
-                    <label>Email de Contacto</label>
-                    <input type="email" id="newContractorEmail" class="form-input" placeholder="correo@empresa.com">
-                </div>
-                <div class="form-group">
-                    <label>Teléfono</label>
-                    <input type="tel" id="newContractorPhone" class="form-input" placeholder="55 1234 5678">
-                </div>
-                <div class="form-group">
-                    <label>Disciplina</label>
+                <div class="form-group"><label>Nombre de la Empresa *</label><input type="text" id="newContractorName" class="form-input" placeholder="Nombre del proveedor"></div>
+                <div class="form-group"><label>Persona de Contacto</label><input type="text" id="newContractorContact" class="form-input" placeholder="Nombre del responsable"></div>
+                <div class="form-group"><label>Email de Contacto</label><input type="email" id="newContractorEmail" class="form-input" placeholder="correo@empresa.com"></div>
+                <div class="form-group"><label>Teléfono</label><input type="tel" id="newContractorPhone" class="form-input" placeholder="55 1234 5678"></div>
+                <div class="form-group"><label>Disciplina</label>
                     <select id="newContractorDiscipline" class="form-select">
                         <option value="electrical">⚡ Eléctrico</option>
                         <option value="instrumentation">📟 Instrumentación</option>
                         <option value="both">🔧 Ambas</option>
                     </select>
                 </div>
-                <div class="alert alert-info">
-                    <strong>📌 Se generará automáticamente:</strong>
-                    <ul class="mt-2">
-                        <li>ID único del proveedor</li>
-                        <li>Clave de licencia</li>
-                        <li>Archivo JSON para que el proveedor importe</li>
-                    </ul>
-                </div>
+                <div class="alert-info"><strong>📌 Se generará automáticamente:</strong> ID único, Clave de licencia, Archivo JSON para el proveedor</div>
             </div>
             <div class="modal-footer">
                 <button id="cancelNewContractorBtn" class="btn-outline">Cancelar</button>
@@ -282,51 +276,39 @@
         import { initSidebar } from '/comisionamiento/js/components/sidebar.js';
         import { reportManager } from '/comisionamiento/js/services/report-manager.js';
         import { notifications } from '/comisionamiento/js/services/notifications.js';
-        import { logger } from '/comisionamiento/js/core/logger.js';
-        import { formatters } from '/comisionamiento/js/utils/format.js';
         
-        const log = logger.setContext('ExecutiveDashboard');
-        let charts = {};
+        let clientProveedores = [];
         
         // ============================================
         // GESTIÓN DE PROVEEDORES
         // ============================================
         
-        let clientProveedores = [];
-        
-        async function loadClientProveedores() {
+        function loadClientProveedores() {
             const saved = localStorage.getItem('client_proveedores');
-            if (saved) {
-                clientProveedores = JSON.parse(saved);
-            }
-            renderContractorsTable();
-            updateTotalProveedores();
+            if (saved) clientProveedores = JSON.parse(saved);
+            updateUI();
         }
         
         function saveClientProveedores() {
             localStorage.setItem('client_proveedores', JSON.stringify(clientProveedores));
-            updateTotalProveedores();
+            updateUI();
         }
         
-        function updateTotalProveedores() {
-            const totalSpan = document.getElementById('totalProveedores');
-            if (totalSpan) totalSpan.textContent = clientProveedores.length;
+        function updateUI() {
+            document.getElementById('totalProveedores').textContent = clientProveedores.length;
+            renderContractorsTable();
         }
         
         function renderContractorsTable() {
             const container = document.getElementById('contractorsTable');
             if (!container) return;
-            
             if (clientProveedores.length === 0) {
                 container.innerHTML = '<p class="text-center text-muted">No hay proveedores registrados</p>';
                 return;
             }
-            
             container.innerHTML = `
                 <table class="table">
-                    <thead>
-                        <tr><th>Empresa</th><th>ID</th><th>Licencia</th><th>Contacto</th><th>Disciplina</th><th>Acciones</th> </tr>
-                    </thead>
+                    <thead><tr><th>Empresa</th><th>ID</th><th>Licencia</th><th>Contacto</th><th>Disciplina</th><th>Acciones</th></tr></thead>
                     <tbody>
                         ${clientProveedores.map(p => `
                             <tr>
@@ -337,7 +319,7 @@
                                 <td>${p.disciplina === 'electrical' ? '⚡ Eléctrico' : p.disciplina === 'instrumentation' ? '📟 Instrumentación' : '🔧 Ambas'}</td>
                                 <td>
                                     <button class="btn-icon-sm download-config" data-id="${p.id}">📥</button>
-                                    <button class="btn-icon-sm delete-contractor" data-id="${p.id}" style="color: #ef4444;">🗑️</button>
+                                    <button class="btn-icon-sm delete-contractor" data-id="${p.id}" style="color:#ef4444;">🗑️</button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -345,27 +327,25 @@
                 </table>
             `;
             
-            container.querySelectorAll('.download-config').forEach(btn => {
+            document.querySelectorAll('.download-config').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const proveedor = clientProveedores.find(p => p.id === btn.dataset.id);
-                    if (proveedor) generarArchivoParaProveedor(proveedor);
+                    if (proveedor) generarArchivoProveedor(proveedor);
                 });
             });
-            
-            container.querySelectorAll('.delete-contractor').forEach(btn => {
+            document.querySelectorAll('.delete-contractor').forEach(btn => {
                 btn.addEventListener('click', () => {
                     if (confirm('¿Eliminar este proveedor?')) {
                         clientProveedores = clientProveedores.filter(p => p.id !== btn.dataset.id);
                         saveClientProveedores();
-                        renderContractorsTable();
                         notifications.success('Proveedor eliminado');
                     }
                 });
             });
         }
         
-        function generarArchivoParaProveedor(proveedor) {
-            const archivoProveedor = {
+        function generarArchivoProveedor(proveedor) {
+            const archivo = {
                 metadata: { version: "2.0", type: "proveedor-config", generatedAt: new Date().toISOString(), generatedBy: "Contratista General" },
                 proveedor: {
                     id: proveedor.id,
@@ -377,8 +357,7 @@
                     disciplina: proveedor.disciplina || 'both'
                 }
             };
-            
-            const jsonStr = JSON.stringify(archivoProveedor, null, 2);
+            const jsonStr = JSON.stringify(archivo, null, 2);
             const blob = new Blob([jsonStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -395,10 +374,8 @@
                 notifications.warning('Ingrese el nombre del proveedor');
                 return;
             }
-            
             const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
             const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-            
             const nuevoProveedor = {
                 id, licencia, nombre,
                 contacto: document.getElementById('newContractorContact').value,
@@ -407,12 +384,10 @@
                 disciplina: document.getElementById('newContractorDiscipline').value,
                 createdAt: new Date().toISOString()
             };
-            
             clientProveedores.push(nuevoProveedor);
             saveClientProveedores();
-            generarArchivoParaProveedor(nuevoProveedor);
+            generarArchivoProveedor(nuevoProveedor);
             document.getElementById('newContractorModal').style.display = 'none';
-            renderContractorsTable();
             notifications.success(`Proveedor ${nombre} creado`);
         }
         
@@ -422,90 +397,57 @@
         
         async function init() {
             await reportManager.init();
-            await loadClientProveedores();
+            loadClientProveedores();
             await loadDashboard();
         }
         
         async function loadDashboard() {
             const consolidado = reportManager.getProgresoConsolidado();
-            const proveedores = reportManager.getProveedores();
             const prorrogas = reportManager.getReportesProrroga();
-            
             document.getElementById('totalReportes').textContent = consolidado.totalReportes;
             document.getElementById('totalProrrogas').textContent = prorrogas.length;
-            
             let totalItems = 0, totalCompletados = 0;
             consolidado.proveedores.forEach(p => { totalItems += p.totalItems; totalCompletados += p.completados; });
             const progresoGeneral = totalItems > 0 ? Math.round((totalCompletados / totalItems) * 100) : 0;
             document.getElementById('totalProgreso').textContent = `${progresoGeneral}%`;
-            
-            updateEtapasChart(consolidado.etapas, themeManager.isDark());
-            updateSistemasChart(consolidado.sistemas, themeManager.isDark());
+            updateEtapasChart(consolidado.etapas);
+            updateSistemasChart(consolidado.sistemas);
             updateProveedoresList(consolidado.proveedores);
             updateReportesPorEtapa(consolidado.etapas);
             updateProrrogasList(prorrogas);
         }
         
-        function updateEtapasChart(etapas, isDark) {
+        function updateEtapasChart(etapas) {
             const ctx = document.getElementById('etapasChart')?.getContext('2d');
             if (!ctx) return;
-            if (charts.etapas) charts.etapas.destroy();
-            charts.etapas = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: etapas.map(e => e.etapa.nombre), datasets: [{ label: 'Progreso (%)', data: etapas.map(e => e.porcentaje), backgroundColor: '#3b82f6', borderRadius: 8 }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
-            });
+            new Chart(ctx, { type: 'bar', data: { labels: etapas.map(e => e.etapa.nombre), datasets: [{ label: 'Progreso (%)', data: etapas.map(e => e.porcentaje), backgroundColor: '#3b82f6' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } } });
         }
         
-        function updateSistemasChart(sistemas, isDark) {
+        function updateSistemasChart(sistemas) {
             const ctx = document.getElementById('sistemasChart')?.getContext('2d');
             if (!ctx) return;
-            if (charts.sistemas) charts.sistemas.destroy();
-            charts.sistemas = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: sistemas.map(s => s.sistema.nombre), datasets: [{ label: 'Progreso (%)', data: sistemas.map(s => s.porcentaje), backgroundColor: '#8b5cf6', borderRadius: 8 }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
-            });
+            new Chart(ctx, { type: 'bar', data: { labels: sistemas.map(s => s.sistema.nombre), datasets: [{ label: 'Progreso (%)', data: sistemas.map(s => s.porcentaje), backgroundColor: '#8b5cf6' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } } });
         }
         
         function updateProveedoresList(proveedores) {
             const container = document.getElementById('proveedoresList');
             if (!container) return;
             if (proveedores.length === 0) { container.innerHTML = '<p class="text-center text-muted">No hay reportes de proveedores importados</p>'; return; }
-            container.innerHTML = proveedores.map(p => `
-                <div class="contractor-item">
-                    <div><strong>${p.proveedor.nombre}</strong><div class="text-sm text-muted">ID: ${p.proveedor.id}</div></div>
-                    <div class="contractor-progress">
-                        <div class="flex-between text-sm mb-1"><span>Progreso</span><span>${p.porcentaje}%</span></div>
-                        <div class="progress-small"><div class="progress-small-fill" style="width: ${p.porcentaje}%"></div></div>
-                    </div>
-                </div>
-            `).join('');
+            container.innerHTML = proveedores.map(p => `<div class="contractor-item"><div><strong>${p.proveedor.nombre}</strong><div class="text-sm text-muted">ID: ${p.proveedor.id}</div></div><div class="contractor-progress"><div class="flex-between text-sm mb-1"><span>Progreso</span><span>${p.porcentaje}%</span></div><div class="progress-small"><div class="progress-small-fill" style="width: ${p.porcentaje}%"></div></div></div></div>`).join('');
         }
         
         function updateReportesPorEtapa(etapas) {
             const container = document.getElementById('reportesPorEtapa');
             if (!container) return;
             if (etapas.length === 0) { container.innerHTML = '<p class="text-center text-muted">No hay reportes por etapa</p>'; return; }
-            container.innerHTML = `<div class="grid grid-cols-3 gap-3">${etapas.map(e => `
-                <div class="p-3 bg-secondary rounded-lg">
-                    <div class="flex-between"><span class="etapa-tag">${e.etapa.nombre}</span><span class="font-bold">${e.porcentaje}%</span></div>
-                    <div class="progress-small mt-2"><div class="progress-small-fill" style="width: ${e.porcentaje}%"></div></div>
-                </div>
-            `).join('')}</div>`;
+            container.innerHTML = `<div class="grid grid-cols-3 gap-3">${etapas.map(e => `<div class="p-3 bg-secondary rounded-lg"><div class="flex-between"><span class="etapa-tag">${e.etapa.nombre}</span><span class="font-bold">${e.porcentaje}%</span></div><div class="progress-small mt-2"><div class="progress-small-fill" style="width: ${e.porcentaje}%"></div></div></div>`).join('')}</div>`;
         }
         
         function updateProrrogasList(prorrogas) {
             const container = document.getElementById('prorrogasList');
             if (!container) return;
             if (prorrogas.length === 0) { container.innerHTML = '<p class="text-center text-muted">No hay prórrogas registradas</p>'; return; }
-            container.innerHTML = prorrogas.map(r => `
-                <div class="contractor-item" style="border-left: 3px solid #f59e0b;">
-                    <div><strong>${r.datos.proveedor.nombre}</strong><span class="prorroga-badge">📅 Prórroga</span>
-                    <div class="text-sm">${r.datos.proyecto.nombre} | ${r.datos.etapa.nombre} | ${r.datos.sistema.nombre}</div>
-                    <div class="text-xs text-muted">Motivo: ${r.prorrogaMotivo || r.datos.metadata?.prorrogaMotivo || 'No especificado'}</div></div>
-                </div>
-            `).join('');
+            container.innerHTML = prorrogas.map(r => `<div class="contractor-item" style="border-left:3px solid #f59e0b;"><div><strong>${r.datos.proveedor.nombre}</strong><span class="prorroga-badge">📅 Prórroga</span><div class="text-sm">${r.datos.proyecto.nombre} | ${r.datos.etapa.nombre} | ${r.datos.sistema.nombre}</div><div class="text-xs text-muted">Motivo: ${r.prorrogaMotivo || r.datos.metadata?.prorrogaMotivo || 'No especificado'}</div></div></div>`).join('');
         }
         
         function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
@@ -527,17 +469,17 @@
         async function processFile(file) {
             const statusDiv = document.getElementById('importStatus');
             statusDiv.style.display = 'block';
-            statusDiv.innerHTML = '<div class="alert alert-info">⏳ Procesando reporte...</div>';
+            statusDiv.innerHTML = '<div class="alert-info">⏳ Procesando reporte...</div>';
             try {
                 const content = await file.text();
                 const reportData = JSON.parse(content);
                 const result = await reportManager.importReport(reportData);
-                statusDiv.innerHTML = `<div class="alert alert-success">✅ ${result.message}</div>`;
+                statusDiv.innerHTML = `<div class="alert-info" style="border-left-color:#10b981;">✅ ${result.message}</div>`;
                 setTimeout(() => statusDiv.style.display = 'none', 3000);
                 await loadDashboard();
                 notifications.success(result.message);
             } catch (error) {
-                statusDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${error.message}</div>`;
+                statusDiv.innerHTML = `<div class="alert-info" style="border-left-color:#ef4444;">❌ Error: ${error.message}</div>`;
                 notifications.error(error.message);
             }
         }
@@ -558,20 +500,22 @@
         
         // Eventos modales
         document.getElementById('manageContractorsBtn')?.addEventListener('click', () => {
-            document.getElementById('manageContractorsModal').style.display = 'flex';
-            renderContractorsTable();
+            const modal = document.getElementById('manageContractorsModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                renderContractorsTable();
+            } else {
+                console.error('Modal no encontrado');
+            }
         });
         document.getElementById('newContractorBtn')?.addEventListener('click', () => {
-            document.getElementById('newContractorModal').style.display = 'flex';
+            const modal = document.getElementById('newContractorModal');
+            if (modal) modal.style.display = 'flex';
         });
         document.getElementById('saveNewContractorBtn')?.addEventListener('click', generarNuevoProveedor);
         document.getElementById('cancelNewContractorBtn')?.addEventListener('click', () => {
             document.getElementById('newContractorModal').style.display = 'none';
         });
-        document.querySelectorAll('.modal-close').forEach(btn => {
-            btn.addEventListener('click', () => { btn.closest('.modal').style.display = 'none'; });
-        });
-        window.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; });
         
         initTheme();
         initSidebar();
