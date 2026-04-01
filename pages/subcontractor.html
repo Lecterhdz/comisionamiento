@@ -153,7 +153,20 @@
                             <div class="text-center text-sm mt-1" id="statsPercent">0% completado</div>
                         </div>
                     </div>
-                    
+                    <div class="form-section">
+                        <h3>📊 Mi Progreso General</h3>
+                        <div class="progress-bar-container mt-2">
+                            <div class="progress-bar-fill" id="miProgresoFill" style="width: 0%"></div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <strong id="miProgresoPercent">0%</strong> completado
+                        </div>
+                        <div class="text-sm text-muted mt-2">
+                            Total items: <strong id="totalItemsCount">0</strong> | 
+                            Completados: <strong id="completedItemsCount">0</strong> | 
+                            Pendientes: <strong id="pendingItemsCount">0</strong>
+                        </div>
+                    </div>                  
                     <div class="form-section">
                         <h3>📥 Importar trabajo previo</h3>
                         <div class="file-upload-area" id="fileUploadArea">
@@ -338,20 +351,53 @@
             
             if (proveedorChecklists.length === 0) {
                 container.innerHTML = '<p class="text-center text-muted">No hay checklists guardados</p>';
+                // Resetear estadísticas
+                document.getElementById('miProgresoFill').style.width = '0%';
+                document.getElementById('miProgresoPercent').textContent = '0%';
+                document.getElementById('totalItemsCount').textContent = '0';
+                document.getElementById('completedItemsCount').textContent = '0';
+                document.getElementById('pendingItemsCount').textContent = '0';
                 return;
             }
+            
+            // Calcular progreso general
+            let totalItems = 0;
+            let totalCompleted = 0;
+            
+            proveedorChecklists.forEach(c => {
+                if (c.estadisticas) {
+                    totalItems += c.estadisticas.totalItems;
+                    totalCompleted += c.estadisticas.completados;
+                }
+            });
+            
+            const overallPercent = totalItems > 0 ? Math.round((totalCompleted / totalItems) * 100) : 0;
+            
+            // Actualizar barra de progreso general
+            document.getElementById('miProgresoFill').style.width = `${overallPercent}%`;
+            document.getElementById('miProgresoPercent').textContent = `${overallPercent}%`;
+            document.getElementById('totalItemsCount').textContent = totalItems;
+            document.getElementById('completedItemsCount').textContent = totalCompleted;
+            document.getElementById('pendingItemsCount').textContent = totalItems - totalCompleted;
             
             container.innerHTML = proveedorChecklists.map(c => `
                 <div class="checklist-card ${c.status}" data-id="${c.id}">
                     <div class="flex-between">
-                        <div><strong>${c.sistema?.nombre || 'Sistema'}</strong>
-                        <span class="badge-status badge-${c.status} ml-2">${getStatusText(c.status)}</span>
-                        ${c.metadata?.isProrroga ? '<span class="badge-status badge-prorroga ml-2">📅 Prórroga</span>' : ''}</div>
+                        <div>
+                            <strong>${c.sistema?.nombre || 'Sistema'}</strong>
+                            <span class="badge-status badge-${c.status} ml-2">${getStatusText(c.status)}</span>
+                            ${c.metadata?.isProrroga ? '<span class="badge-status badge-prorroga ml-2">📅 Prórroga</span>' : ''}
+                        </div>
+                        <span class="text-sm">${c.estadisticas?.porcentaje || 0}%</span>
                     </div>
-                    <div class="text-sm text-muted mt-1">${c.proyecto?.nombre || 'Proyecto'} | ${c.etapa?.nombre || 'Etapa'}</div>
-                    <div class="flex-between mt-2">
-                        <div class="progress-small" style="width: 100px;"><div class="progress-small-fill" style="width: ${c.estadisticas?.porcentaje || 0}%; height: 4px;"></div></div>
-                        <span class="text-xs">${c.estadisticas?.porcentaje || 0}%</span>
+                    <div class="text-sm text-muted mt-1">
+                        ${c.sistema?.identificador || ''} | ${c.proyecto?.nombre || 'Proyecto'} | ${c.etapa?.nombre || 'Etapa'}
+                    </div>
+                    <div class="progress-small mt-2" style="width: 100%;">
+                        <div class="progress-small-fill" style="width: ${c.estadisticas?.porcentaje || 0}%; height: 6px;"></div>
+                    </div>
+                    <div class="text-xs text-muted mt-1">
+                        ${c.estadisticas?.completados || 0}/${c.estadisticas?.totalItems || 0} items completados
                     </div>
                 </div>
             `).join('');
