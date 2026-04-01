@@ -331,7 +331,44 @@
             localStorage.setItem('client_proveedores', JSON.stringify(clientProveedores));
             updateStats();
         }
-        
+        function generarNuevoProveedor() {
+            const nombre = document.getElementById('newContractorName').value.trim();
+            if (!nombre) {
+                showNotification('Ingrese el nombre del proveedor', 'error');
+                return;
+            }
+            
+            // El sistema genera ID y Licencia (esto lo guarda el cliente)
+            const nuevoProveedor = {
+                nombre: nombre,
+                contacto: document.getElementById('newContractorContact').value,
+                email: document.getElementById('newContractorEmail').value,
+                telefono: document.getElementById('newContractorPhone').value,
+                disciplina: document.getElementById('newContractorDiscipline').value
+            };
+            
+            // Registrar proveedor en el sistema del cliente
+            const proveedorRegistrado = registrarProveedor(nuevoProveedor);
+            
+            // Generar archivo para enviar al proveedor (incluye ID y Licencia)
+            const archivo = generarArchivoParaProveedor(
+                proyectoActualId,           // ID del proyecto
+                proveedorRegistrado.id,     // ID del proveedor
+                proveedorRegistrado         // Datos del proveedor
+            );
+            
+            // Descargar archivo
+            const jsonStr = JSON.stringify(archivo, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `proveedor-${nombre.replace(/\s/g, '-')}-config.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification(`Proveedor ${nombre} creado. Archivo generado.`, 'success');
+        }
         // Actualizar estadísticas
         function updateStats() {
             document.getElementById('totalProveedores').textContent = clientProveedores.length;
