@@ -91,7 +91,6 @@
             border-radius: 0.5rem;
         }
         
-        /* Estilos para las opciones de estado */
         .status-options {
             display: flex;
             gap: 1rem;
@@ -190,6 +189,7 @@
                         <div class="text-sm text-muted mt-2">
                             Total items: <strong id="totalItemsCount">0</strong> | 
                             Completados: <strong id="completedItemsCount">0</strong> | 
+                            N/A: <strong id="naItemsCount">0</strong> | 
                             Pendientes: <strong id="pendingItemsCount">0</strong>
                         </div>
                     </div>                  
@@ -311,7 +311,10 @@
                             <div id="checklistContainer" class="mt-3"></div>
                             <div class="mt-4">
                                 <div class="progress-bar-container"><div class="progress-bar-fill" id="checklistProgress" style="width: 0%"></div></div>
-                                <div class="text-center mt-2"><span id="progressText">0% completado</span></div>
+                                <div class="text-center mt-2">
+                                    <span id="progressText">0% completado</span>
+                                    <span class="text-sm text-muted ml-2" id="progressDetail"></span>
+                                </div>
                             </div>
                         </div>
                         
@@ -358,19 +361,38 @@
             return `CHK-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
         }
         
+        // Calcular estadísticas considerando que N/A no cuenta para el progreso
+        function calculateStatsForChecklist(checklist) {
+            if (!checklist.checklist) return { total: 0, completados: 0, na: 0, pendientes: 0, porcentaje: 0 };
+            
+            const items = Object.values(checklist.checklist)[0] || [];
+            const total = items.length;
+            const completados = items.filter(i => i.status === 'completed').length;
+            const na = items.filter(i => i.status === 'na').length;
+            const pendientes = total - completados - na;
+            const porcentaje = (total - na) > 0 ? Math.round((completados / (total - na)) * 100) : 0;
+            
+            return { total, completados, na, pendientes, porcentaje };
+        }
+        
         function getStats() {
             const total = proveedorChecklists.length;
             const pending = proveedorChecklists.filter(c => c.status === 'pending').length;
             const completed = proveedorChecklists.filter(c => c.status === 'completed').length;
-            let totalItems = 0, totalCompleted = 0;
+            
+            let totalItems = 0;
+            let totalCompleted = 0;
+            let totalNa = 0;
+            
             proveedorChecklists.forEach(c => {
-                if (c.estadisticas) {
-                    totalItems += c.estadisticas.totalItems;
-                    totalCompleted += c.estadisticas.completados;
-                }
+                const stats = calculateStatsForChecklist(c);
+                totalItems += stats.total;
+                totalCompleted += stats.completados;
+                totalNa += stats.na;
             });
-            const overallProgress = totalItems > 0 ? Math.round((totalCompleted / totalItems) * 100) : 0;
-            return { total, pending, completed, overallProgress };
+            
+            const overallProgress = (totalItems - totalNa) > 0 ? Math.round((totalCompleted / (totalItems - totalNa)) * 100) : 0;
+            return { total, pending, completed, overallProgress, totalItems, totalCompleted, totalNa };
         }
         
         function renderChecklistsList() {
@@ -383,29 +405,34 @@
                 document.getElementById('miProgresoPercent').textContent = '0%';
                 document.getElementById('totalItemsCount').textContent = '0';
                 document.getElementById('completedItemsCount').textContent = '0';
+                document.getElementById('naItemsCount').textContent = '0';
                 document.getElementById('pendingItemsCount').textContent = '0';
                 return;
             }
             
             let totalItems = 0;
             let totalCompleted = 0;
+            let totalNa = 0;
             
             proveedorChecklists.forEach(c => {
-                if (c.estadisticas) {
-                    totalItems += c.estadisticas.totalItems;
-                    totalCompleted += c.estadisticas.completados;
-                }
+                const stats = calculateStatsForChecklist(c);
+                totalItems += stats.total;
+                totalCompleted += stats.completados;
+                totalNa += stats.na;
             });
             
-            const overallPercent = totalItems > 0 ? Math.round((totalCompleted / totalItems) * 100) : 0;
+            const overallPercent = (totalItems - totalNa) > 0 ? Math.round((totalCompleted / (totalItems - totalNa)) * 100) : 0;
             
             document.getElementById('miProgresoFill').style.width = `${overallPercent}%`;
             document.getElementById('miProgresoPercent').textContent = `${overallPercent}%`;
             document.getElementById('totalItemsCount').textContent = totalItems;
             document.getElementById('completedItemsCount').textContent = totalCompleted;
-            document.getElementById('pendingItemsCount').textContent = totalItems - totalCompleted;
+            document.getElementById('naItemsCount').textContent = totalNa;
+            document.getElementById('pendingItemsCount').textContent = totalItems - totalCompleted - totalNa;
             
-            container.innerHTML = proveedorChecklists.map(c => `
+            container.innerHTML = proveedorChecklists.map(c => {
+                const stats = calculateStatsForChecklist(c);
+                return `
                 <div class="checklist-card ${c.status}" data-id="${c.id}">
                     <div class="flex-between">
                         <div>
@@ -413,19 +440,19 @@
                             <span class="badge-status badge-${c.status} ml-2">${getStatusText(c.status)}</span>
                             ${c.metadata?.isProrroga ? '<span class="badge-status badge-prorroga ml-2">📅 Prórroga</span>' : ''}
                         </div>
-                        <span class="text-sm">${c.estadisticas?.porcentaje || 0}%</span>
+                        <span class="text-sm">${stats.porcentaje}%</span>
                     </div>
                     <div class="text-sm text-muted mt-1">
                         ${c.sistema?.identificador || ''} | ${c.proyecto?.nombre || 'Proyecto'}
                     </div>
                     <div class="progress-small mt-2" style="width: 100%;">
-                        <div class="progress-small-fill" style="width: ${c.estadisticas?.porcentaje || 0}%; height: 6px;"></div>
+                        <div class="progress-small-fill" style="width: ${stats.porcentaje}%; height: 6px;"></div>
                     </div>
                     <div class="text-xs text-muted mt-1">
-                        ${c.estadisticas?.completados || 0}/${c.estadisticas?.totalItems || 0} items completados
+                        ✅ ${stats.completados} | ❌ ${stats.pendientes} | ⚪ ${stats.na} (${stats.total} total)
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
             
             document.querySelectorAll('.checklist-card').forEach(card => {
                 card.addEventListener('click', () => {
@@ -487,7 +514,6 @@
         function cargarChecklistEnEditor(checklist) {
             currentChecklistId = checklist.id;
             
-            // Cargar datos del proyecto
             document.getElementById('proyectoId').value = checklist.proyecto?.id || '';
             document.getElementById('proyectoNombre').value = checklist.proyecto?.nombre || '';
             document.getElementById('proyectoCliente').value = checklist.proyecto?.cliente || '';
@@ -495,26 +521,23 @@
             document.getElementById('etapaId').value = checklist.etapa?.id || 'pre-comisionamiento';
             document.getElementById('etapaFechaFinProgramada').value = checklist.etapa?.fechaFinProgramada || '';
             
-            // Prórroga
             const isProrroga = checklist.metadata?.isProrroga || false;
             document.getElementById('isProrrogaCheckbox').checked = isProrroga;
             document.getElementById('prorrogaMotivoDiv').style.display = isProrroga ? 'block' : 'none';
             document.getElementById('prorrogaMotivo').value = checklist.metadata?.prorrogaMotivo || '';
             
-            // Sistema
             document.getElementById('sistemaTipo').value = checklist.sistema?.tipo || 'electrical';
             document.getElementById('sistemaId').value = checklist.sistema?.id || 'tablero-media-tension';
             document.getElementById('sistemaIdentificador').value = checklist.sistema?.identificador || '';
             document.getElementById('sistemaUbicacion').value = checklist.sistema?.ubicacion || '';
             
-            // Cargar items del checklist
             const sistemaData = getChecklistItemsBySystem(checklist.sistema?.id);
             if (sistemaData) {
                 currentChecklistItems = sistemaData.items.map(item => {
                     const savedItem = checklist.checklist?.[checklist.sistema?.tipo]?.find(i => i.id === item.id);
                     return {
                         ...item,
-                        status: savedItem?.status || 'pending', // pending, completed, na
+                        status: savedItem?.status || 'pending',
                         notes: savedItem?.notes || ''
                     };
                 });
@@ -538,6 +561,7 @@
             html += `<div class="alert-info mb-3" style="font-size: 0.8rem;">
                 <strong>Instrucciones:</strong> Marque cada item según corresponda:
                 <strong>✅ Cumple</strong> | <strong>❌ No Cumple</strong> | <strong>⚪ N/A</strong>
+                <br><span class="text-muted">Los items marcados como N/A no afectan el porcentaje de progreso.</span>
             </div>`;
             
             currentChecklistItems.forEach(item => {
@@ -568,7 +592,6 @@
             });
             container.innerHTML = html;
             
-            // Eventos para radio buttons
             container.querySelectorAll('input[type="radio"]').forEach(radio => {
                 radio.addEventListener('change', (e) => {
                     const itemId = e.target.name.replace('status-', '');
@@ -581,7 +604,6 @@
                 });
             });
             
-            // Eventos para textarea
             container.querySelectorAll('textarea').forEach(ta => {
                 let timeout;
                 ta.addEventListener('input', (e) => {
@@ -602,450 +624,16 @@
         
         function updateEditorProgress() {
             const total = currentChecklistItems.length;
-            const completed = currentChecklistItems.filter(i => i.status === 'completed').length;
-            const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+            const completados = currentChecklistItems.filter(i => i.status === 'completed').length;
+            const na = currentChecklistItems.filter(i => i.status === 'na').length;
+            const pendientes = total - completados - na;
+            const percent = (total - na) > 0 ? Math.round((completados / (total - na)) * 100) : 0;
+            
             document.getElementById('checklistProgress').style.width = `${percent}%`;
-            document.getElementById('progressText').textContent = `${percent}% completado (${completed}/${total})`;
+            document.getElementById('progressText').textContent = `${percent}% completado`;
+            document.getElementById('progressDetail').textContent = `(${completados}✅ / ${pendientes}❌ / ${na}⚪ de ${total})`;
         }
         
         function guardarChecklist() {
             if (!currentChecklistId) {
-                showNotification('No hay checklist seleccionado', 'error');
-                return;
-            }
-            
-            const proveedorId = document.getElementById('proveedorId').value.trim();
-            const licenciaKey = document.getElementById('licenciaKey').value.trim();
-            const proveedorNombre = document.getElementById('proveedorNombre').value.trim();
-            
-            const isProrroga = document.getElementById('isProrrogaCheckbox').checked;
-            const prorrogaMotivo = isProrroga ? document.getElementById('prorrogaMotivo').value.trim() : null;
-            
-            const totalItems = currentChecklistItems.length;
-            const completados = currentChecklistItems.filter(i => i.status === 'completed').length;
-            const porcentaje = totalItems > 0 ? Math.round((completados / totalItems) * 100) : 0;
-            
-            const checklistData = {
-                id: currentChecklistId,
-                proveedor: { 
-                    id: proveedorId, 
-                    nombre: proveedorNombre, 
-                    licencia: licenciaKey 
-                },
-                proyecto: {
-                    id: document.getElementById('proyectoId').value,
-                    nombre: document.getElementById('proyectoNombre').value,
-                    cliente: document.getElementById('proyectoCliente').value,
-                    ubicacion: document.getElementById('proyectoUbicacion').value
-                },
-                etapa: {
-                    id: document.getElementById('etapaId').value,
-                    nombre: document.getElementById('etapaId').options[document.getElementById('etapaId').selectedIndex]?.text || '',
-                    fechaFinProgramada: document.getElementById('etapaFechaFinProgramada').value
-                },
-                sistema: {
-                    id: document.getElementById('sistemaId').value,
-                    nombre: getSystemName(document.getElementById('sistemaId').value),
-                    tipo: document.getElementById('sistemaTipo').value,
-                    identificador: document.getElementById('sistemaIdentificador').value,
-                    ubicacion: document.getElementById('sistemaUbicacion').value
-                },
-                checklist: {
-                    [document.getElementById('sistemaTipo').value]: currentChecklistItems
-                },
-                estadisticas: {
-                    totalItems,
-                    completados,
-                    pendientes: totalItems - completados,
-                    porcentaje
-                },
-                metadata: {
-                    isProrroga,
-                    prorrogaMotivo
-                },
-                status: porcentaje === 100 ? 'completed' : 'pending',
-                updatedAt: new Date().toISOString()
-            };
-            
-            const index = proveedorChecklists.findIndex(c => c.id === currentChecklistId);
-            if (index !== -1) {
-                proveedorChecklists[index] = checklistData;
-            } else {
-                proveedorChecklists.push(checklistData);
-            }
-            
-            saveProveedorChecklists();
-            showNotification('Checklist guardado correctamente', 'success');
-        }
-        
-        function exportarChecklist() {
-            if (!currentChecklistId) {
-                showNotification('No hay checklist seleccionado', 'error');
-                return;
-            }
-            
-            const checklist = proveedorChecklists.find(c => c.id === currentChecklistId);
-            if (!checklist) {
-                showNotification('Checklist no encontrado', 'error');
-                return;
-            }
-            
-            const reporte = {
-                metadata: {
-                    version: "2.0",
-                    reportId: `RPT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-                    generatedAt: new Date().toISOString(),
-                    isProrroga: checklist.metadata?.isProrroga || false,
-                    prorrogaMotivo: checklist.metadata?.prorrogaMotivo || null
-                },
-                proveedor: checklist.proveedor,
-                proyecto: checklist.proyecto,
-                etapa: checklist.etapa,
-                sistema: checklist.sistema,
-                checklist: checklist.checklist,
-                estadisticas: checklist.estadisticas
-            };
-            
-            const jsonStr = JSON.stringify(reporte, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `reporte-${checklist.proveedor.nombre.replace(/\s/g, '-')}-${checklist.sistema.identificador}-${Date.now()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            showNotification('Reporte exportado. Envíelo al contratista general.', 'success');
-        }
-        
-        function exportarTodos() {
-            if (proveedorChecklists.length === 0) {
-                showNotification('No hay checklists para exportar', 'error');
-                return;
-            }
-            
-            const exportData = {
-                metadata: {
-                    version: "2.0",
-                    exportedAt: new Date().toISOString(),
-                    type: "all",
-                    count: proveedorChecklists.length
-                },
-                checklists: proveedorChecklists
-            };
-            
-            const jsonStr = JSON.stringify(exportData, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `todos-los-reportes-${Date.now()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            showNotification(`${proveedorChecklists.length} reportes exportados`, 'success');
-        }
-        
-        function eliminarTodos() {
-            if (confirm('¿Eliminar TODOS los checklists? Esta acción no se puede deshacer.')) {
-                proveedorChecklists = [];
-                saveProveedorChecklists();
-                currentChecklistId = null;
-                document.getElementById('editorPanel').style.display = 'none';
-                document.getElementById('noSelectionPanel').style.display = 'block';
-                showNotification('Todos los checklists eliminados', 'success');
-            }
-        }
-        
-        function getSystemName(systemId) {
-            const systems = {
-                'tablero-media-tension': 'Tablero de Media Tensión',
-                'tablero-baja-tension': 'Tablero de Baja Tensión',
-                'motor-electrico': 'Motor Eléctrico',
-                'transmisor-presion': 'Transmisor de Presión'
-            };
-            return systems[systemId] || systemId;
-        }
-        
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
-        }
-        
-        // ============================================
-        // IMPORTAR CONFIGURACIÓN
-        // ============================================
-        
-        const importConfigArea = document.getElementById('importConfigArea');
-        const configFileInput = document.getElementById('configFileInput');
-        
-        if (importConfigArea) {
-            importConfigArea.addEventListener('click', () => configFileInput?.click());
-            importConfigArea.addEventListener('dragover', (e) => { e.preventDefault(); importConfigArea.style.borderColor = 'var(--primary-500)'; });
-            importConfigArea.addEventListener('dragleave', () => { importConfigArea.style.borderColor = 'var(--border-color)'; });
-            importConfigArea.addEventListener('drop', async (e) => {
-                e.preventDefault();
-                importConfigArea.style.borderColor = 'var(--border-color)';
-                const file = e.dataTransfer.files[0];
-                if (file) await importConfigFile(file);
-            });
-        }
-        
-        if (configFileInput) {
-            configFileInput.addEventListener('change', async (e) => {
-                if (e.target.files[0]) await importConfigFile(e.target.files[0]);
-            });
-        }
-        
-        async function importConfigFile(file) {
-            const statusDiv = document.getElementById('proveedorConfigStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = '<div class="alert-info">⏳ Procesando archivo...</div>';
-            
-            try {
-                const content = await file.text();
-                const data = JSON.parse(content);
-                
-                if (data.metadata?.type !== 'proveedor-config' || !data.proveedor) {
-                    throw new Error('Archivo no válido. Debe ser el archivo de configuración proporcionado por el contratista general.');
-                }
-                
-                if (!data.proveedor.id || !data.proveedor.licencia) {
-                    throw new Error('Archivo no válido: falta ID o Licencia');
-                }
-                
-                // Guardar datos del proveedor
-                document.getElementById('proveedorId').value = data.proveedor.id;
-                document.getElementById('licenciaKey').value = data.proveedor.licencia;
-                document.getElementById('proveedorNombre').value = data.proveedor.nombre;
-                document.getElementById('proveedorContacto').value = data.proveedor.contacto || '';
-                document.getElementById('proveedorEmail').value = data.proveedor.email || '';
-                document.getElementById('proveedorTelefono').value = data.proveedor.telefono || '';
-                document.getElementById('proveedorDisciplina').value = data.proveedor.disciplina || 'both';
-                
-                document.getElementById('displayProveedorId').textContent = data.proveedor.id;
-                document.getElementById('displayLicenciaKey').textContent = data.proveedor.licencia;
-                document.getElementById('displayProveedorNombre').textContent = data.proveedor.nombre;
-                document.getElementById('displayProveedorContacto').textContent = data.proveedor.contacto || '-';
-                document.getElementById('displayProveedorEmail').textContent = data.proveedor.email || '-';
-                document.getElementById('displayProveedorTelefono').textContent = data.proveedor.telefono || '-';
-                document.getElementById('proveedorDataDisplay').style.display = 'block';
-                
-                localStorage.setItem('proveedorConfig', JSON.stringify(data.proveedor));
-                
-                // Crear checklists
-                if (data.checklists && data.checklists.length > 0) {
-                    const nuevosChecklists = [];
-                    
-                    for (const checklist of data.checklists) {
-                        for (const identificador of checklist.identificadores) {
-                            const nuevoChecklist = {
-                                id: generateId(),
-                                proveedor: {
-                                    id: data.proveedor.id,
-                                    nombre: data.proveedor.nombre,
-                                    licencia: data.proveedor.licencia
-                                },
-                                proyecto: data.proyecto || {
-                                    id: 'proyecto-importado',
-                                    nombre: 'Proyecto Importado',
-                                    cliente: 'Cliente',
-                                    ubicacion: ''
-                                },
-                                etapa: {
-                                    id: 'comisionamiento',
-                                    nombre: 'Comisionamiento',
-                                    fechaFinProgramada: ''
-                                },
-                                sistema: {
-                                    id: checklist.systemId,
-                                    nombre: checklist.systemNombre,
-                                    tipo: checklist.disciplina || 'electrical',
-                                    identificador: identificador,
-                                    ubicacion: ''
-                                },
-                                checklist: {
-                                    [checklist.disciplina || 'electrical']: checklist.itemsBase.map(item => ({
-                                        ...item,
-                                        status: 'pending',
-                                        notes: ''
-                                    }))
-                                },
-                                estadisticas: {
-                                    totalItems: checklist.itemsBase.length,
-                                    completados: 0,
-                                    pendientes: checklist.itemsBase.length,
-                                    porcentaje: 0
-                                },
-                                metadata: {
-                                    isProrroga: false,
-                                    prorrogaMotivo: null
-                                },
-                                status: 'pending',
-                                createdAt: new Date().toISOString(),
-                                updatedAt: new Date().toISOString()
-                            };
-                            nuevosChecklists.push(nuevoChecklist);
-                        }
-                    }
-                    
-                    for (const nuevo of nuevosChecklists) {
-                        proveedorChecklists.push(nuevo);
-                    }
-                    saveProveedorChecklists();
-                    
-                    statusDiv.innerHTML = `<div class="alert-success">✅ Configuración cargada. Se crearon ${nuevosChecklists.length} checklists automáticamente.</div>`;
-                } else {
-                    statusDiv.innerHTML = `<div class="alert-success">✅ Configuración cargada. No hay checklists asignados.</div>`;
-                }
-                
-                setTimeout(() => statusDiv.style.display = 'none', 3000);
-                showNotification(`Configuración cargada. ${data.checklists?.length || 0} sistemas asignados.`, 'success');
-                
-            } catch (error) {
-                statusDiv.innerHTML = `<div class="alert-error">❌ Error: ${error.message}</div>`;
-                showNotification(error.message, 'error');
-            }
-        }
-        
-        function loadSavedProveedorConfig() {
-            const saved = localStorage.getItem('proveedorConfig');
-            if (saved) {
-                const proveedor = JSON.parse(saved);
-                document.getElementById('proveedorId').value = proveedor.id;
-                document.getElementById('licenciaKey').value = proveedor.licencia;
-                document.getElementById('proveedorNombre').value = proveedor.nombre;
-                document.getElementById('proveedorContacto').value = proveedor.contacto || '';
-                document.getElementById('proveedorEmail').value = proveedor.email || '';
-                document.getElementById('proveedorTelefono').value = proveedor.telefono || '';
-                document.getElementById('proveedorDisciplina').value = proveedor.disciplina || 'both';
-                
-                document.getElementById('displayProveedorId').textContent = proveedor.id;
-                document.getElementById('displayLicenciaKey').textContent = proveedor.licencia;
-                document.getElementById('displayProveedorNombre').textContent = proveedor.nombre;
-                document.getElementById('displayProveedorContacto').textContent = proveedor.contacto || '-';
-                document.getElementById('displayProveedorEmail').textContent = proveedor.email || '-';
-                document.getElementById('displayProveedorTelefono').textContent = proveedor.telefono || '-';
-                document.getElementById('proveedorDataDisplay').style.display = 'block';
-            }
-        }
-        
-        // ============================================
-        // TEMA Y SIDEBAR
-        // ============================================
-        
-        function setTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            localStorage.setItem('theme', theme);
-            const themeToggle = document.getElementById('themeToggle');
-            const themeToggleMobile = document.getElementById('themeToggleMobile');
-            if (themeToggle) {
-                const textSpan = themeToggle.querySelector('.theme-text');
-                if (textSpan) textSpan.textContent = theme === 'dark' ? 'Modo claro' : 'Modo oscuro';
-            }
-            if (themeToggleMobile) themeToggleMobile.textContent = theme === 'dark' ? '☀️' : '🌙';
-        }
-        
-        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        setTheme(savedTheme);
-        
-        document.getElementById('themeToggle')?.addEventListener('click', () => {
-            setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-        });
-        document.getElementById('themeToggleMobile')?.addEventListener('click', () => {
-            setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-        });
-        
-        document.getElementById('hamburger')?.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.add('open');
-            document.getElementById('sidebarOverlay').classList.add('active');
-        });
-        document.getElementById('sidebarClose')?.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('sidebarOverlay').classList.remove('active');
-        });
-        document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('sidebarOverlay').classList.remove('active');
-        });
-        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-        });
-        
-        // ============================================
-        // EVENTOS
-        // ============================================
-        
-        document.getElementById('guardarChecklistBtn')?.addEventListener('click', guardarChecklist);
-        document.getElementById('exportarChecklistBtn')?.addEventListener('click', exportarChecklist);
-        document.getElementById('exportarTodosBtn')?.addEventListener('click', exportarTodos);
-        document.getElementById('eliminarTodosBtn')?.addEventListener('click', eliminarTodos);
-        document.getElementById('cancelarEdicionBtn')?.addEventListener('click', () => {
-            currentChecklistId = null;
-            document.getElementById('editorPanel').style.display = 'none';
-            document.getElementById('noSelectionPanel').style.display = 'block';
-        });
-        document.getElementById('isProrrogaCheckbox')?.addEventListener('change', (e) => {
-            document.getElementById('prorrogaMotivoDiv').style.display = e.target.checked ? 'block' : 'none';
-        });
-        
-        // Importar trabajo previo (recuperar checklists guardados)
-        const fileUploadArea = document.getElementById('fileUploadArea');
-        const fileInput = document.getElementById('fileInput');
-        
-        fileUploadArea?.addEventListener('click', () => fileInput?.click());
-        fileUploadArea?.addEventListener('dragover', (e) => { e.preventDefault(); fileUploadArea.style.borderColor = 'var(--primary-500)'; });
-        fileUploadArea?.addEventListener('dragleave', () => { fileUploadArea.style.borderColor = 'var(--border-color)'; });
-        fileUploadArea?.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            fileUploadArea.style.borderColor = 'var(--border-color)';
-            const file = e.dataTransfer.files[0];
-            if (file) await importWorkFile(file);
-        });
-        fileInput?.addEventListener('change', async (e) => { if (e.target.files[0]) await importWorkFile(e.target.files[0]); });
-        
-        async function importWorkFile(file) {
-            const statusDiv = document.getElementById('importStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = '<div class="alert-info">⏳ Procesando archivo...</div>';
-            
-            try {
-                const content = await file.text();
-                const data = JSON.parse(content);
-                
-                let importedCount = 0;
-                if (data.metadata?.type === 'all' && data.checklists) {
-                    for (const checklist of data.checklists) {
-                        proveedorChecklists.push(checklist);
-                        importedCount++;
-                    }
-                    saveProveedorChecklists();
-                    statusDiv.innerHTML = `<div class="alert-success">✅ ${importedCount} checklist(s) importados</div>`;
-                } else if (data.proyecto && data.proveedor) {
-                    proveedorChecklists.push(data);
-                    saveProveedorChecklists();
-                    statusDiv.innerHTML = `<div class="alert-success">✅ 1 checklist importado</div>`;
-                } else {
-                    throw new Error('Formato de archivo no reconocido');
-                }
-                
-                setTimeout(() => statusDiv.style.display = 'none', 3000);
-                showNotification(`${importedCount || 1} checklist(s) importados`, 'success');
-                
-            } catch (error) {
-                statusDiv.innerHTML = `<div class="alert-error">❌ Error: ${error.message}</div>`;
-                showNotification(error.message, 'error');
-            }
-        }
-        
-        // ============================================
-        // INICIALIZAR
-        // ============================================
-        
-        loadProveedorChecklists();
-        loadSavedProveedorConfig();
-        
-        console.log('Portal proveedor cargado - Funcionalidades completas');
-    </script>
-</body>
-</html>
+                showNotification('No hay checklist seleccion
