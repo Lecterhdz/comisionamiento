@@ -311,11 +311,11 @@
         </div>
     </main>
     
-    <script>
+    <script type="module">
         // ============================================
         // PROVEEDOR STORAGE SIMPLIFICADO
         // ============================================
-        
+        import { validarArchivoProveedor } from '/comisionamiento/js/data/proyectos.js';
         let proveedorChecklists = [];
         
         function loadProveedorChecklists() {
@@ -739,6 +739,89 @@
         loadSavedProveedorConfig();
         
         console.log('Portal proveedor cargado');
+            async function importConfigFile(file) {
+        const statusDiv = document.getElementById('proveedorConfigStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = '<div class="alert-info">⏳ Procesando archivo...</div>';
+        
+        try {
+            const content = await file.text();
+            const data = JSON.parse(content);
+            
+            // VALIDACIÓN: Verificar que el archivo es de configuración de proveedor
+            if (data.metadata?.type !== 'proveedor-config' || !data.validacion) {
+                throw new Error('Archivo no válido. Debe ser el archivo de configuración proporcionado por el contratista general.');
+            }
+            
+            // VALIDACIÓN CRÍTICA: Verificar ID y Licencia
+            const validacion = validarArchivoProveedor(data);
+            
+            if (!validacion.valido) {
+                throw new Error(validacion.error);
+            }
+            
+            // Si es válido, cargar los datos
+            document.getElementById('proveedorId').value = validacion.proveedor.id;
+            document.getElementById('licenciaKey').value = validacion.proveedor.licencia;
+            document.getElementById('proveedorNombre').value = validacion.proveedor.nombre;
+            document.getElementById('proveedorContacto').value = validacion.proveedor.contacto || '';
+            document.getElementById('proveedorEmail').value = validacion.proveedor.email || '';
+            document.getElementById('proveedorTelefono').value = validacion.proveedor.telefono || '';
+            
+            // Mostrar datos del proyecto
+            document.getElementById('displayProveedorId').textContent = validacion.proveedor.id;
+            document.getElementById('displayLicenciaKey').textContent = validacion.proveedor.licencia;
+            document.getElementById('displayProveedorNombre').textContent = validacion.proveedor.nombre;
+            document.getElementById('displayProveedorContacto').textContent = validacion.proveedor.contacto || '-';
+            document.getElementById('displayProveedorEmail').textContent = validacion.proveedor.email || '-';
+            document.getElementById('displayProveedorTelefono').textContent = validacion.proveedor.telefono || '-';
+            document.getElementById('proveedorDataDisplay').style.display = 'block';
+            
+            // Guardar en localStorage
+            localStorage.setItem('proveedorConfig', JSON.stringify(validacion.proveedor));
+            localStorage.setItem('proyectoConfig', JSON.stringify(validacion.proyecto));
+            localStorage.setItem('checklistsAsignados', JSON.stringify(validacion.checklists));
+            
+            statusDiv.innerHTML = `<div class="alert-success">✅ Configuración validada y cargada para: ${validacion.proveedor.nombre}</div>`;
+            setTimeout(() => statusDiv.style.display = 'none', 3000);
+            showNotification(`Configuración validada y cargada para ${validacion.proveedor.nombre}`, 'success');
+            
+        } catch (error) {
+            statusDiv.innerHTML = `<div class="alert-error">❌ Error: ${error.message}</div>`;
+            showNotification(error.message, 'error');
+        }
+    }
+    
+    // Cargar configuración guardada al iniciar (con validación)
+    function loadSavedProveedorConfig() {
+        const saved = localStorage.getItem('proveedorConfig');
+        const savedProyecto = localStorage.getItem('proyectoConfig');
+        
+        if (saved) {
+            const proveedor = JSON.parse(saved);
+            document.getElementById('proveedorId').value = proveedor.id;
+            document.getElementById('licenciaKey').value = proveedor.licencia;
+            document.getElementById('proveedorNombre').value = proveedor.nombre;
+            document.getElementById('proveedorContacto').value = proveedor.contacto || '';
+            document.getElementById('proveedorEmail').value = proveedor.email || '';
+            document.getElementById('proveedorTelefono').value = proveedor.telefono || '';
+            
+            document.getElementById('displayProveedorId').textContent = proveedor.id;
+            document.getElementById('displayLicenciaKey').textContent = proveedor.licencia;
+            document.getElementById('displayProveedorNombre').textContent = proveedor.nombre;
+            document.getElementById('displayProveedorContacto').textContent = proveedor.contacto || '-';
+            document.getElementById('displayProveedorEmail').textContent = proveedor.email || '-';
+            document.getElementById('displayProveedorTelefono').textContent = proveedor.telefono || '-';
+            document.getElementById('proveedorDataDisplay').style.display = 'block';
+        }
+        
+        if (savedProyecto) {
+            const proyecto = JSON.parse(savedProyecto);
+            document.getElementById('proyectoId').value = proyecto.id || '';
+            document.getElementById('proyectoNombre').value = proyecto.nombre || '';
+            document.getElementById('proyectoCliente').value = proyecto.cliente || '';
+        }
+    }
     </script>
 </body>
 </html>
