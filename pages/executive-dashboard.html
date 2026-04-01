@@ -51,9 +51,6 @@
             border-color: var(--primary-500);
             background: var(--bg-secondary);
         }
-        [data-theme="dark"] .file-upload-area:hover {
-            border-color: var(--accent-neon);
-        }
         .table {
             width: 100%;
             border-collapse: collapse;
@@ -83,7 +80,6 @@
             border-left: 3px solid #3b82f6;
             padding: 1rem;
             border-radius: 0.5rem;
-            margin-bottom: 1rem;
         }
         .alert-success {
             background: rgba(16,185,129,0.1);
@@ -134,18 +130,29 @@
         }
         .mt-2 { margin-top: 0.5rem; }
         .mt-3 { margin-top: 1rem; }
+        .mt-4 { margin-top: 1.5rem; }
         .mb-2 { margin-bottom: 0.5rem; }
         .mb-3 { margin-bottom: 1rem; }
         .mb-4 { margin-bottom: 1.5rem; }
+        .ml-2 { margin-left: 0.5rem; }
         .text-center { text-align: center; }
         .text-muted { color: var(--text-tertiary); }
+        .text-sm { font-size: 0.875rem; }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .grid-cols-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
         .grid-cols-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
         code { background: var(--bg-tertiary); padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.8rem; }
         .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 1rem; font-size: 0.7rem; background: var(--bg-tertiary); }
+        .badge-electrical { background: #3b82f6; color: white; }
+        .badge-instrumentation { background: #8b5cf6; color: white; }
+        .border-bottom { border-bottom: 1px solid var(--border-color); }
+        .align-center { align-items: center; }
+        .gap-3 { gap: 1rem; }
+        .font-bold { font-weight: 700; }
         
         @media (max-width: 768px) {
             .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+            .grid-cols-2 { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -158,30 +165,15 @@
                 <span class="logo-icon">⚡</span>
                 <span class="logo-text">Comisiona</span>
             </a>
-            <button class="sidebar-toggle" id="sidebarToggle" aria-label="Colapsar menú">
-                <span class="toggle-icon">◀</span>
-            </button>
-            <button class="sidebar-close" id="sidebarClose" aria-label="Cerrar menú">✕</button>
+            <button class="sidebar-toggle" id="sidebarToggle">◀</button>
+            <button class="sidebar-close" id="sidebarClose">✕</button>
         </div>
         
         <nav class="sidebar-nav">
-            <a href="/comisionamiento/index.html" class="nav-item">
-                <span class="nav-icon">📊</span>
-                <span class="nav-text">Dashboard</span>
-            </a>
-            <a href="/comisionamiento/pages/punchlist.html" class="nav-item">
-                <span class="nav-icon">📋</span>
-                <span class="nav-text">Punchlist</span>
-                <span class="badge" id="punchlistBadge">0</span>
-            </a>
-            <a href="/comisionamiento/pages/executive-dashboard.html" class="nav-item active">
-                <span class="nav-icon">📈</span>
-                <span class="nav-text">Ejecutivo</span>
-            </a>
-            <a href="/comisionamiento/pages/subcontractor.html" class="nav-item">
-                <span class="nav-icon">👥</span>
-                <span class="nav-text">Proveedores</span>
-            </a>
+            <a href="/comisionamiento/index.html" class="nav-item">📊 Dashboard</a>
+            <a href="/comisionamiento/pages/punchlist.html" class="nav-item">📋 Punchlist</a>
+            <a href="/comisionamiento/pages/executive-dashboard.html" class="nav-item active">📈 Ejecutivo</a>
+            <a href="/comisionamiento/pages/subcontractor.html" class="nav-item">👥 Proveedores</a>
         </nav>
         
         <div class="sidebar-footer">
@@ -195,13 +187,9 @@
     
     <main class="main-content">
         <header class="top-bar">
-            <button class="hamburger" id="hamburger" aria-label="Abrir menú">
-                <span></span><span></span><span></span>
-            </button>
+            <button class="hamburger" id="hamburger">☰</button>
             <h1 class="page-title">Dashboard Ejecutivo</h1>
-            <div class="top-bar-actions">
-                <button id="themeToggleMobile" class="mobile-theme-toggle">🌙</button>
-            </div>
+            <button id="themeToggleMobile" class="mobile-theme-toggle">🌙</button>
         </header>
         
         <div class="content-container">
@@ -219,6 +207,17 @@
                         <input type="file" id="fileInput" accept=".json" style="display: none;">
                     </div>
                     <div id="importStatus" class="mt-3" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <!-- Gestión de Proyectos -->
+            <div class="card mb-4">
+                <div class="card-header flex-between">
+                    <h3>📁 Proyectos</h3>
+                    <button id="newProjectBtn" class="btn-primary btn-sm">+ Nuevo Proyecto</button>
+                </div>
+                <div class="card-body">
+                    <div id="projectsList"></div>
                 </div>
             </div>
             
@@ -308,7 +307,8 @@
             </div>
         </div>
     </div>
-    <!-- Modal para nuevo proyecto - VERSIÓN CON SELECCIÓN DE CHECKLISTS -->
+    
+    <!-- Modal para nuevo proyecto -->
     <div id="newProjectModal" class="modal" style="display: none;">
         <div class="modal-content modal-lg">
             <div class="modal-header">
@@ -316,12 +316,11 @@
                 <button class="modal-close" id="closeNewProjectModalBtn">&times;</button>
             </div>
             <div class="modal-body">
-                <!-- Datos básicos del proyecto -->
                 <div class="form-group">
                     <label>Nombre del Proyecto *</label>
                     <input type="text" id="newProjectName" class="form-input" placeholder="Ej: Planta Industrial Norte">
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid-cols-2">
                     <div class="form-group">
                         <label>Cliente</label>
                         <input type="text" id="newProjectClient" class="form-input" placeholder="Nombre del cliente">
@@ -336,12 +335,10 @@
                     <input type="text" id="newProjectLocation" class="form-input" placeholder="Ciudad, Estado">
                 </div>
                 
-                <!-- Sección de selección de checklists -->
                 <div class="mt-4">
                     <h4>📋 Seleccionar Checklists para el Proyecto</h4>
                     <p class="text-sm text-muted mb-3">Seleccione los sistemas/equipos que formarán parte de este proyecto</p>
                     
-                    <!-- Filtros -->
                     <div class="flex-between mb-3">
                         <div>
                             <button id="filterAllBtn" class="btn-outline btn-sm">Todos</button>
@@ -354,12 +351,10 @@
                         </div>
                     </div>
                     
-                    <!-- Lista de checklists disponibles -->
-                    <div id="checklistsSelection" class="checklists-selection" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1rem;">
+                    <div id="checklistsSelection" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1rem;">
                         <p class="text-center text-muted">Cargando checklists...</p>
                     </div>
                     
-                    <!-- Configuración por checklist seleccionado -->
                     <div id="checklistConfigPanel" style="display: none;" class="mt-4">
                         <h5>⚙️ Configuración de Cantidades</h5>
                         <p class="text-sm text-muted">Para cada checklist seleccionado, indique cuántas unidades se instalarán</p>
@@ -372,15 +367,90 @@
                 <button id="saveNewProjectBtn" class="btn-primary">Crear Proyecto</button>
             </div>
         </div>
-    </div>    
+    </div>
+    
     <script type="module">
-        // ============================================
-        // GESTIÓN DE PROVEEDORES (SIN DEPENDENCIAS EXTERNAS)
-        // ============================================
-        import { getAvailableChecklists, getSystemsByDiscipline } from '/comisionamiento/js/data/checklists-base.js';
-        let clientProveedores = [];
+        import { getAvailableChecklists } from '/comisionamiento/js/data/checklists-base.js';
         
-        // Cargar proveedores guardados
+        // ============================================
+        // DATOS
+        // ============================================
+        
+        let clientProveedores = [];
+        let proyectos = [];
+        let charts = {};
+        
+        // ============================================
+        // PROYECTOS
+        // ============================================
+        
+        function loadProyectos() {
+            const saved = localStorage.getItem('proyectos');
+            if (saved) {
+                proyectos = JSON.parse(saved);
+            } else {
+                proyectos = [{
+                    id: 'proj-001',
+                    name: 'Proyecto Principal',
+                    clientName: 'Cliente Ejemplo',
+                    projectCode: 'PROJ-001',
+                    location: 'Ciudad',
+                    createdAt: new Date().toISOString(),
+                    checklistsAsignados: []
+                }];
+                saveProyectos();
+            }
+            renderProjectsList();
+        }
+        
+        function saveProyectos() {
+            localStorage.setItem('proyectos', JSON.stringify(proyectos));
+        }
+        
+        function renderProjectsList() {
+            const container = document.getElementById('projectsList');
+            if (!container) return;
+            
+            if (proyectos.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">No hay proyectos registrados</p>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr><th>Proyecto</th><th>Cliente</th><th>Código</th><th>Checklists</th><th>Acciones</th>
+                    </thead>
+                    <tbody>
+                        ${proyectos.map(p => `
+                            <tr>
+                                <td><strong>${p.name}</strong><br><span class="text-xs text-muted">${new Date(p.createdAt).toLocaleDateString()}</span></td>
+                                <td>${p.clientName || '-'}</td>
+                                <td>${p.projectCode || '-'}</td>
+                                <td class="text-center">${p.checklistsAsignados?.length || 0}</td>
+                                <td><button class="btn-icon-sm delete-project" data-id="${p.id}" style="color:#ef4444;">🗑️</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.querySelectorAll('.delete-project').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (confirm('¿Eliminar este proyecto?')) {
+                        proyectos = proyectos.filter(p => p.id !== btn.dataset.id);
+                        saveProyectos();
+                        renderProjectsList();
+                        showNotification('Proyecto eliminado', 'success');
+                    }
+                });
+            });
+        }
+        
+        // ============================================
+        // PROVEEDORES
+        // ============================================
+        
         function loadProveedores() {
             const saved = localStorage.getItem('client_proveedores');
             if (saved) {
@@ -390,69 +460,24 @@
             renderContractorsTable();
         }
         
-        // Guardar proveedores
         function saveProveedores() {
             localStorage.setItem('client_proveedores', JSON.stringify(clientProveedores));
             updateStats();
         }
-        function generarNuevoProveedor() {
-            const nombre = document.getElementById('newContractorName').value.trim();
-            if (!nombre) {
-                showNotification('Ingrese el nombre del proveedor', 'error');
-                return;
-            }
-            
-            // El sistema genera ID y Licencia (esto lo guarda el cliente)
-            const nuevoProveedor = {
-                nombre: nombre,
-                contacto: document.getElementById('newContractorContact').value,
-                email: document.getElementById('newContractorEmail').value,
-                telefono: document.getElementById('newContractorPhone').value,
-                disciplina: document.getElementById('newContractorDiscipline').value
-            };
-            
-            // Registrar proveedor en el sistema del cliente
-            const proveedorRegistrado = registrarProveedor(nuevoProveedor);
-            
-            // Generar archivo para enviar al proveedor (incluye ID y Licencia)
-            const archivo = generarArchivoParaProveedor(
-                proyectoActualId,           // ID del proyecto
-                proveedorRegistrado.id,     // ID del proveedor
-                proveedorRegistrado         // Datos del proveedor
-            );
-            
-            // Descargar archivo
-            const jsonStr = JSON.stringify(archivo, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `proveedor-${nombre.replace(/\s/g, '-')}-config.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            showNotification(`Proveedor ${nombre} creado. Archivo generado.`, 'success');
-        }
-        // Actualizar estadísticas
+        
         function updateStats() {
             document.getElementById('totalProveedores').textContent = clientProveedores.length;
-            
-            // Calcular progreso general (ejemplo)
             const totalReportes = localStorage.getItem('totalReportes') || '0';
             const totalProrrogas = localStorage.getItem('totalProrrogas') || '0';
             document.getElementById('totalReportes').textContent = totalReportes;
             document.getElementById('totalProrrogas').textContent = totalProrrogas;
             
-            // Progreso general (ejemplo basado en proveedores)
             let totalProgress = 0;
-            clientProveedores.forEach(p => {
-                totalProgress += p.progress || 0;
-            });
+            clientProveedores.forEach(p => { totalProgress += p.progress || 0; });
             const avgProgress = clientProveedores.length > 0 ? Math.round(totalProgress / clientProveedores.length) : 0;
             document.getElementById('totalProgreso').textContent = `${avgProgress}%`;
         }
         
-        // Renderizar tabla de proveedores
         function renderContractorsTable() {
             const container = document.getElementById('contractorsTable');
             if (!container) return;
@@ -464,9 +489,7 @@
             
             container.innerHTML = `
                 <table class="table">
-                    <thead>
-                        <tr><th>Empresa</th><th>ID</th><th>Licencia</th><th>Contacto</th><th>Disciplina</th><th>Acciones</th></tr>
-                    </thead>
+                    <thead><tr><th>Empresa</th><th>ID</th><th>Licencia</th><th>Contacto</th><th>Disciplina</th><th>Acciones</th></tr></thead>
                     <tbody>
                         ${clientProveedores.map(p => `
                             <tr>
@@ -485,7 +508,6 @@
                 </table>
             `;
             
-            // Eventos de descarga
             document.querySelectorAll('.download-config').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const proveedor = clientProveedores.find(p => p.id === btn.dataset.id);
@@ -493,7 +515,6 @@
                 });
             });
             
-            // Eventos de eliminación
             document.querySelectorAll('.delete-contractor').forEach(btn => {
                 btn.addEventListener('click', () => {
                     if (confirm('¿Eliminar este proveedor?')) {
@@ -506,15 +527,9 @@
             });
         }
         
-        // Generar archivo JSON para el proveedor
         function generarArchivoProveedor(proveedor) {
             const archivo = {
-                metadata: {
-                    version: "2.0",
-                    type: "proveedor-config",
-                    generatedAt: new Date().toISOString(),
-                    generatedBy: "Contratista General"
-                },
+                metadata: { version: "2.0", type: "proveedor-config", generatedAt: new Date().toISOString() },
                 proveedor: {
                     id: proveedor.id,
                     licencia: proveedor.licencia,
@@ -523,18 +538,8 @@
                     email: proveedor.email || '',
                     telefono: proveedor.telefono || '',
                     disciplina: proveedor.disciplina || 'both'
-                },
-                instrucciones: {
-                    titulo: "Configuración de Proveedor",
-                    pasos: [
-                        "1. Abra el portal de proveedores: /pages/subcontractor.html",
-                        "2. Haga clic en 'Importar archivo de configuración'",
-                        "3. Seleccione este archivo JSON",
-                        "4. Complete los checklists y exporte los reportes"
-                    ]
                 }
             };
-            
             const jsonStr = JSON.stringify(archivo, null, 2);
             const blob = new Blob([jsonStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -543,11 +548,9 @@
             a.download = `proveedor-${proveedor.nombre.replace(/\s/g, '-')}-config.json`;
             a.click();
             URL.revokeObjectURL(url);
-            
             showNotification(`Archivo generado para ${proveedor.nombre}`, 'success');
         }
         
-        // Crear nuevo proveedor
         function crearNuevoProveedor() {
             const nombre = document.getElementById('newContractorName').value.trim();
             if (!nombre) {
@@ -555,30 +558,23 @@
                 return;
             }
             
-            // Generar ID único
             const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
             const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
             
             const nuevoProveedor = {
-                id: id,
-                licencia: licencia,
-                nombre: nombre,
+                id, licencia, nombre,
                 contacto: document.getElementById('newContractorContact').value,
                 email: document.getElementById('newContractorEmail').value,
                 telefono: document.getElementById('newContractorPhone').value,
                 disciplina: document.getElementById('newContractorDiscipline').value,
-                progress: 0,
-                createdAt: new Date().toISOString()
+                progress: 0
             };
             
             clientProveedores.push(nuevoProveedor);
             saveProveedores();
             renderContractorsTable();
-            
-            // Generar archivo automáticamente
             generarArchivoProveedor(nuevoProveedor);
             
-            // Cerrar modal y limpiar
             document.getElementById('newContractorModal').style.display = 'none';
             document.getElementById('newContractorName').value = '';
             document.getElementById('newContractorContact').value = '';
@@ -588,175 +584,14 @@
             showNotification(`Proveedor ${nombre} creado`, 'success');
         }
         
-        // Mostrar notificación simple
-        function showNotification(message, type = 'info') {
-            const statusDiv = document.getElementById('importStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = `<div class="alert-${type}">${message}</div>`;
-            setTimeout(() => {
-                statusDiv.style.display = 'none';
-            }, 3000);
-        }
-        
-        // Importar reporte JSON
-        async function importarReporte(file) {
-            const statusDiv = document.getElementById('importStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = '<div class="alert-info">⏳ Procesando archivo...</div>';
-            
-            try {
-                const content = await file.text();
-                const data = JSON.parse(content);
-                
-                if (data.proveedor) {
-                    statusDiv.innerHTML = `<div class="alert-success">✅ Reporte importado de: ${data.proveedor.nombre}</div>`;
-                    
-                    // Actualizar contadores
-                    let totalReportes = parseInt(localStorage.getItem('totalReportes') || '0') + 1;
-                    localStorage.setItem('totalReportes', totalReportes);
-                    
-                    if (data.metadata?.isProrroga) {
-                        let totalProrrogas = parseInt(localStorage.getItem('totalProrrogas') || '0') + 1;
-                        localStorage.setItem('totalProrrogas', totalProrrogas);
-                    }
-                    
-                    // Actualizar progreso del proveedor si existe
-                    const existingProvider = clientProveedores.find(p => p.id === data.proveedor.id);
-                    if (existingProvider && data.estadisticas?.porcentaje) {
-                        existingProvider.progress = data.estadisticas.porcentaje;
-                        saveProveedores();
-                        renderContractorsTable();
-                    }
-                    
-                    updateStats();
-                    
-                } else {
-                    throw new Error('Formato no válido');
-                }
-                
-                setTimeout(() => statusDiv.style.display = 'none', 3000);
-            } catch (error) {
-                statusDiv.innerHTML = `<div class="alert-error">❌ Error: ${error.message}</div>`;
-                setTimeout(() => statusDiv.style.display = 'none', 3000);
-            }
-        }
-        
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
-        }
-        
         // ============================================
-        // EVENTOS
+        // CHECKLISTS PARA PROYECTOS
         // ============================================
         
-        // Modales
-        document.getElementById('manageContractorsBtn').addEventListener('click', () => {
-            renderContractorsTable();
-            document.getElementById('manageContractorsModal').style.display = 'flex';
-        });
-        
-        document.getElementById('closeManageModalBtn')?.addEventListener('click', () => {
-            document.getElementById('manageContractorsModal').style.display = 'none';
-        });
-        document.getElementById('closeManageFooterBtn')?.addEventListener('click', () => {
-            document.getElementById('manageContractorsModal').style.display = 'none';
-        });
-        
-        document.getElementById('newContractorBtn').addEventListener('click', () => {
-            document.getElementById('newContractorModal').style.display = 'flex';
-        });
-        document.getElementById('closeNewModalBtn')?.addEventListener('click', () => {
-            document.getElementById('newContractorModal').style.display = 'none';
-        });
-        document.getElementById('cancelNewContractorBtn')?.addEventListener('click', () => {
-            document.getElementById('newContractorModal').style.display = 'none';
-        });
-        document.getElementById('saveNewContractorBtn').addEventListener('click', crearNuevoProveedor);
-        
-        // Cerrar modal al hacer clic fuera
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                e.target.style.display = 'none';
-            }
-        });
-        
-        // File upload
-        const fileUploadArea = document.getElementById('fileUploadArea');
-        const fileInput = document.getElementById('fileInput');
-        
-        fileUploadArea?.addEventListener('click', () => fileInput?.click());
-        fileUploadArea?.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileUploadArea.style.borderColor = 'var(--primary-500)';
-        });
-        fileUploadArea?.addEventListener('dragleave', () => {
-            fileUploadArea.style.borderColor = 'var(--border-color)';
-        });
-        fileUploadArea?.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            fileUploadArea.style.borderColor = 'var(--border-color)';
-            const file = e.dataTransfer.files[0];
-            if (file) await importarReporte(file);
-        });
-        fileInput?.addEventListener('change', async (e) => {
-            if (e.target.files[0]) await importarReporte(e.target.files[0]);
-        });
-        
-        // ============================================
-        // TEMA CLARO/OSCURO
-        // ============================================
-        
-        function setTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            localStorage.setItem('theme', theme);
-        }
-        
-        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        setTheme(savedTheme);
-        
-        document.getElementById('themeToggle')?.addEventListener('click', () => {
-            const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            setTheme(newTheme);
-        });
-        document.getElementById('themeToggleMobile')?.addEventListener('click', () => {
-            const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            setTheme(newTheme);
-        });
-        
-        // ============================================
-        // SIDEBAR
-        // ============================================
-        
-        document.getElementById('hamburger')?.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.add('open');
-            document.getElementById('sidebarOverlay').classList.add('active');
-        });
-        document.getElementById('sidebarClose')?.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('sidebarOverlay').classList.remove('active');
-        });
-        document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('sidebarOverlay').classList.remove('active');
-        });
-        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-        });
-        
-        // ============================================
-        // INICIALIZAR
-        // ============================================
-        
-        // Cargar estadísticas guardadas
-        loadProveedores();
-        
-        console.log('Dashboard ejecutivo cargado - Modales funcionando');
         let availableChecklists = [];
-        let selectedChecklists = new Map(); // map de systemId -> { cantidad, identificadores }
+        let selectedChecklists = new Map();
         let currentFilter = 'all';
         
-        // Cargar checklists disponibles
         function loadAvailableChecklists() {
             availableChecklists = getAvailableChecklists();
             renderChecklistsSelection();
@@ -783,7 +618,7 @@
                     <input type="checkbox" class="checklist-select-cb" data-id="${checklist.id}" ${selectedChecklists.has(checklist.id) ? 'checked' : ''} style="margin-right: 1rem;">
                     <div style="flex: 1;">
                         <strong>${checklist.nombre}</strong>
-                        <span class="badge-discipline badge-${checklist.disciplina} ml-2" style="font-size: 0.7rem; padding: 0.125rem 0.5rem; border-radius: 1rem; ${checklist.disciplina === 'electrical' ? 'background:#3b82f6;' : 'background:#8b5cf6;'} color:white;">${checklist.disciplina === 'electrical' ? 'Eléctrico' : 'Instrumentación'}</span>
+                        <span style="font-size: 0.7rem; padding: 0.125rem 0.5rem; border-radius: 1rem; ${checklist.disciplina === 'electrical' ? 'background:#3b82f6;' : 'background:#8b5cf6;'} color:white; margin-left: 0.5rem;">${checklist.disciplina === 'electrical' ? 'Eléctrico' : 'Instrumentación'}</span>
                         ${checklist.categoria ? `<span class="text-sm text-muted ml-2">${checklist.categoria}</span>` : ''}
                         <div class="text-sm text-muted mt-1">${checklist.totalItems} items en el checklist</div>
                     </div>
@@ -794,7 +629,6 @@
                 </div>
             `).join('');
             
-            // Eventos de selección
             document.querySelectorAll('.checklist-select-cb').forEach(cb => {
                 cb.addEventListener('change', (e) => {
                     const id = e.target.dataset.id;
@@ -843,7 +677,7 @@
             });
             
             panel.innerHTML = selectedList.map(item => `
-                <div class="flex-between align-center p-2 border-bottom" style="border-bottom: 1px solid var(--border-color);">
+                <div class="flex-between align-center p-2 border-bottom">
                     <div>
                         <strong>${item.nombre}</strong>
                         <div class="text-sm text-muted">${item.totalItems} items por unidad</div>
@@ -856,7 +690,185 @@
             `).join('');
         }
         
-        // Filtros
+        function crearNuevoProyecto() {
+            const name = document.getElementById('newProjectName').value.trim();
+            if (!name) {
+                showNotification('Ingrese el nombre del proyecto', 'error');
+                return;
+            }
+            
+            if (selectedChecklists.size === 0) {
+                showNotification('Seleccione al menos un checklist para el proyecto', 'error');
+                return;
+            }
+            
+            const checklistsAsignados = [];
+            for (const [systemId, config] of selectedChecklists.entries()) {
+                const sistema = availableChecklists.find(c => c.id === systemId);
+                if (sistema) {
+                    const identificadores = [];
+                    for (let i = 1; i <= config.cantidad; i++) {
+                        identificadores.push(`${sistema.nombre.substring(0, 3).toUpperCase()}-${String(i).padStart(2, '0')}`);
+                    }
+                    checklistsAsignados.push({
+                        systemId: systemId,
+                        systemNombre: sistema.nombre,
+                        cantidad: config.cantidad,
+                        identificadores: identificadores,
+                        proveedorAsignado: null,
+                        estado: 'pendiente'
+                    });
+                }
+            }
+            
+            const newProject = {
+                id: `proj-${Date.now()}`,
+                name: name,
+                clientName: document.getElementById('newProjectClient').value,
+                projectCode: document.getElementById('newProjectCode').value,
+                location: document.getElementById('newProjectLocation').value,
+                checklistsAsignados: checklistsAsignados,
+                createdAt: new Date().toISOString()
+            };
+            
+            proyectos.push(newProject);
+            saveProyectos();
+            renderProjectsList();
+            
+            document.getElementById('newProjectModal').style.display = 'none';
+            document.getElementById('newProjectName').value = '';
+            document.getElementById('newProjectClient').value = '';
+            document.getElementById('newProjectCode').value = '';
+            document.getElementById('newProjectLocation').value = '';
+            selectedChecklists.clear();
+            
+            showNotification(`Proyecto ${name} creado con ${checklistsAsignados.length} sistemas`, 'success');
+        }
+        
+        // ============================================
+        // UTILIDADES
+        // ============================================
+        
+        function showNotification(message, type = 'info') {
+            const statusDiv = document.getElementById('importStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = `<div class="alert-${type}">${message}</div>`;
+            setTimeout(() => statusDiv.style.display = 'none', 3000);
+        }
+        
+        async function importarReporte(file) {
+            const statusDiv = document.getElementById('importStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<div class="alert-info">⏳ Procesando archivo...</div>';
+            try {
+                const content = await file.text();
+                const data = JSON.parse(content);
+                if (data.proveedor) {
+                    statusDiv.innerHTML = `<div class="alert-success">✅ Reporte importado de: ${data.proveedor.nombre}</div>`;
+                    let totalReportes = parseInt(localStorage.getItem('totalReportes') || '0') + 1;
+                    localStorage.setItem('totalReportes', totalReportes);
+                    if (data.metadata?.isProrroga) {
+                        let totalProrrogas = parseInt(localStorage.getItem('totalProrrogas') || '0') + 1;
+                        localStorage.setItem('totalProrrogas', totalProrrogas);
+                    }
+                    updateStats();
+                } else {
+                    throw new Error('Formato no válido');
+                }
+                setTimeout(() => statusDiv.style.display = 'none', 3000);
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert-error">❌ Error: ${error.message}</div>`;
+                setTimeout(() => statusDiv.style.display = 'none', 3000);
+            }
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+        }
+        
+        // ============================================
+        // TEMA Y SIDEBAR
+        // ============================================
+        
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            const themeToggle = document.getElementById('themeToggle');
+            const themeToggleMobile = document.getElementById('themeToggleMobile');
+            if (themeToggle) {
+                const textSpan = themeToggle.querySelector('.theme-text');
+                if (textSpan) textSpan.textContent = theme === 'dark' ? 'Modo claro' : 'Modo oscuro';
+            }
+            if (themeToggleMobile) themeToggleMobile.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+        
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        setTheme(savedTheme);
+        
+        document.getElementById('themeToggle')?.addEventListener('click', () => {
+            setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        });
+        document.getElementById('themeToggleMobile')?.addEventListener('click', () => {
+            setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        });
+        
+        document.getElementById('hamburger')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.add('open');
+            document.getElementById('sidebarOverlay').classList.add('active');
+        });
+        document.getElementById('sidebarClose')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        });
+        document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        });
+        document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        });
+        
+        // ============================================
+        // EVENTOS
+        // ============================================
+        
+        document.getElementById('manageContractorsBtn').addEventListener('click', () => {
+            renderContractorsTable();
+            document.getElementById('manageContractorsModal').style.display = 'flex';
+        });
+        document.getElementById('closeManageModalBtn')?.addEventListener('click', () => {
+            document.getElementById('manageContractorsModal').style.display = 'none';
+        });
+        document.getElementById('closeManageFooterBtn')?.addEventListener('click', () => {
+            document.getElementById('manageContractorsModal').style.display = 'none';
+        });
+        
+        document.getElementById('newContractorBtn').addEventListener('click', () => {
+            document.getElementById('newContractorModal').style.display = 'flex';
+        });
+        document.getElementById('closeNewModalBtn')?.addEventListener('click', () => {
+            document.getElementById('newContractorModal').style.display = 'none';
+        });
+        document.getElementById('cancelNewContractorBtn')?.addEventListener('click', () => {
+            document.getElementById('newContractorModal').style.display = 'none';
+        });
+        document.getElementById('saveNewContractorBtn').addEventListener('click', crearNuevoProveedor);
+        
+        document.getElementById('newProjectBtn').addEventListener('click', () => {
+            selectedChecklists.clear();
+            currentFilter = 'all';
+            loadAvailableChecklists();
+            document.getElementById('newProjectModal').style.display = 'flex';
+        });
+        document.getElementById('closeNewProjectModalBtn')?.addEventListener('click', () => {
+            document.getElementById('newProjectModal').style.display = 'none';
+        });
+        document.getElementById('cancelNewProjectBtn')?.addEventListener('click', () => {
+            document.getElementById('newProjectModal').style.display = 'none';
+        });
+        document.getElementById('saveNewProjectBtn').addEventListener('click', crearNuevoProyecto);
+        
         document.getElementById('filterAllBtn')?.addEventListener('click', () => {
             currentFilter = 'all';
             renderChecklistsSelection();
@@ -870,7 +882,6 @@
             renderChecklistsSelection();
         });
         
-        // Seleccionar/Deseleccionar todos
         document.getElementById('selectAllBtn')?.addEventListener('click', () => {
             let filtered = availableChecklists;
             if (currentFilter === 'electrical') {
@@ -891,96 +902,32 @@
             renderChecklistsSelection();
         });
         
-        // Modificar crear proyecto para incluir los checklists seleccionados
-        function crearNuevoProyecto() {
-            const name = document.getElementById('newProjectName').value.trim();
-            if (!name) {
-                showNotification('Ingrese el nombre del proyecto', 'error');
-                return;
-            }
-            
-            if (selectedChecklists.size === 0) {
-                showNotification('Seleccione al menos un checklist para el proyecto', 'error');
-                return;
-            }
-            
-            // Generar identificadores para cada checklist según cantidad
-            const checklistsAsignados = [];
-            for (const [systemId, config] of selectedChecklists.entries()) {
-                const sistema = availableChecklists.find(c => c.id === systemId);
-                if (sistema) {
-                    const identificadores = [];
-                    for (let i = 1; i <= config.cantidad; i++) {
-                        identificadores.push(`${sistema.nombre.substring(0, 3).toUpperCase()}-${String(i).padStart(2, '0')}`);
-                    }
-                    checklistsAsignados.push({
-                        systemId: systemId,
-                        systemNombre: sistema.nombre,
-                        cantidad: config.cantidad,
-                        identificadores: identificadores,
-                        proveedorAsignado: null,
-                        estado: 'pendiente'
-                    });
-                }
-            }
-            
-            const newId = `proj-${Date.now()}`;
-            const newProject = {
-                id: newId,
-                name: name,
-                clientName: document.getElementById('newProjectClient').value,
-                projectCode: document.getElementById('newProjectCode').value,
-                location: document.getElementById('newProjectLocation').value,
-                checklistsAsignados: checklistsAsignados,
-                createdAt: new Date().toISOString()
-            };
-            
-            proyectos.push(newProject);
-            proyectoActualId = newId;
-            saveProjects();
-            
-            // Inicializar progreso
-            let totalElectrical = 0, totalInstrumentation = 0;
-            checklistsAsignados.forEach(c => {
-                const sistema = availableChecklists.find(s => s.id === c.systemId);
-                if (sistema?.disciplina === 'electrical') totalElectrical += sistema.totalItems * c.cantidad;
-                else if (sistema?.disciplina === 'instrumentation') totalInstrumentation += sistema.totalItems * c.cantidad;
-            });
-            
-            progresoPorProyecto[newId] = {
-                electrical: { total: totalElectrical, completed: 0 },
-                instrumentation: { total: totalInstrumentation, completed: 0 }
-            };
-            
-            renderProjectSelector();
-            renderProjectsList();
-            updateStats();
-            updateCharts();
-            
-            // Cerrar modal y limpiar
-            document.getElementById('newProjectModal').style.display = 'none';
-            document.getElementById('newProjectName').value = '';
-            document.getElementById('newProjectClient').value = '';
-            document.getElementById('newProjectCode').value = '';
-            document.getElementById('newProjectLocation').value = '';
-            selectedChecklists.clear();
-            
-            showNotification(`Proyecto ${name} creado con ${checklistsAsignados.length} sistemas`, 'success');
-        }
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInput = document.getElementById('fileInput');
+        fileUploadArea?.addEventListener('click', () => fileInput?.click());
+        fileUploadArea?.addEventListener('dragover', (e) => { e.preventDefault(); fileUploadArea.style.borderColor = 'var(--primary-500)'; });
+        fileUploadArea?.addEventListener('dragleave', () => { fileUploadArea.style.borderColor = 'var(--border-color)'; });
+        fileUploadArea?.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            fileUploadArea.style.borderColor = 'var(--border-color)';
+            const file = e.dataTransfer.files[0];
+            if (file) await importarReporte(file);
+        });
+        fileInput?.addEventListener('change', async (e) => { if (e.target.files[0]) await importarReporte(e.target.files[0]); });
         
-        // Al abrir el modal de nuevo proyecto, cargar checklists
-        document.getElementById('newProjectBtn')?.addEventListener('click', () => {
-            selectedChecklists.clear();
-            currentFilter = 'all';
-            loadAvailableChecklists();
-            document.getElementById('newProjectModal').style.display = 'flex';
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) e.target.style.display = 'none';
         });
         
-        // Modificar el evento guardar
-        document.getElementById('saveNewProjectBtn')?.addEventListener('click', crearNuevoProyecto);
+        // ============================================
+        // INICIALIZAR
+        // ============================================
         
-        // Inicializar
+        loadProyectos();
+        loadProveedores();
         loadAvailableChecklists();
+        
+        console.log('Dashboard ejecutivo cargado');
     </script>
 </body>
 </html>
