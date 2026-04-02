@@ -344,7 +344,44 @@
                             <button id="deselectAllChecklistsBtn" class="btn-outline btn-sm ml-2">Deseleccionar Todos</button>
                         </div>
                     </div>
-                    
+                    <!-- En el modal de nuevo proveedor, después de la selección de checklists -->
+                    <div class="form-section mt-4">
+                        <h4>📅 Generar archivos por etapa</h4>
+                        <div class="alert-info mb-3">
+                            <strong>📌 Opción múltiple:</strong> Marque las etapas para las que desea generar archivos.
+                            <br>Se generará un archivo JSON por cada etapa seleccionada.
+                        </div>
+                        
+                        <div class="grid-cols-2 gap-2">
+                            <label class="flex align-center gap-2">
+                                <input type="checkbox" id="etapaPreComisionamiento" value="pre-comisionamiento" checked>
+                                <span>📋 Pre-comisionamiento</span>
+                            </label>
+                            <label class="flex align-center gap-2">
+                                <input type="checkbox" id="etapaComisionamientoFrio" value="comisionamiento-frio">
+                                <span>❄️ Comisionamiento en Frío</span>
+                            </label>
+                            <label class="flex align-center gap-2">
+                                <input type="checkbox" id="etapaComisionamientoCaliente" value="comisionamiento-caliente">
+                                <span>🔥 Comisionamiento en Caliente</span>
+                            </label>
+                            <label class="flex align-center gap-2">
+                                <input type="checkbox" id="etapaPruebasFuncionales" value="pruebas-funcionales">
+                                <span>⚙️ Pruebas Funcionales</span>
+                            </label>
+                            <label class="flex align-center gap-2">
+                                <input type="checkbox" id="etapaAceptacion" value="aceptacion">
+                                <span>✅ Aceptación y Entrega</span>
+                            </label>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <label class="flex align-center gap-2">
+                                <input type="checkbox" id="seleccionarTodasEtapas">
+                                <strong>📌 Seleccionar todas las etapas</strong>
+                            </label>
+                        </div>
+                    </div>                    
                     <div id="checklistsSelection" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1rem;">
                         <p class="text-center text-muted">Cargando checklists...</p>
                     </div>
@@ -358,6 +395,11 @@
                 <button id="cancelNewContractorBtn" class="btn-outline">Cancelar</button>
                 <button id="saveNewContractorBtn" class="btn-primary">Generar Archivo</button>
             </div>
+            <div class="modal-footer">
+                <button id="cancelNewContractorBtn" class="btn-outline">Cancelar</button>
+                <button id="generateSingleBtn" class="btn-outline">📄 Generar solo esta etapa</button>
+                <button id="generateMultipleBtn" class="btn-primary">📦 Generar archivos por etapa</button>
+            </div>            
         </div>
     </div>
     
@@ -645,7 +687,213 @@
                 });
             });
         }
+        function generarArchivosPorEtapas() {
+            const nombre = document.getElementById('newContractorName').value.trim();
+            if (!nombre) {
+                showNotification('Ingrese el nombre del proveedor', 'error');
+                return;
+            }
+            
+            if (selectedChecklists.size === 0) {
+                showNotification('Seleccione al menos un checklist para asignar', 'error');
+                return;
+            }
+            
+            // Obtener etapas seleccionadas
+            const etapasSeleccionadas = [];
+            if (document.getElementById('etapaPreComisionamiento').checked) etapasSeleccionadas.push({ id: 'pre-comisionamiento', nombre: 'Pre-comisionamiento' });
+            if (document.getElementById('etapaComisionamientoFrio').checked) etapasSeleccionadas.push({ id: 'comisionamiento-frio', nombre: 'Comisionamiento en Frío' });
+            if (document.getElementById('etapaComisionamientoCaliente').checked) etapasSeleccionadas.push({ id: 'comisionamiento-caliente', nombre: 'Comisionamiento en Caliente' });
+            if (document.getElementById('etapaPruebasFuncionales').checked) etapasSeleccionadas.push({ id: 'pruebas-funcionales', nombre: 'Pruebas Funcionales' });
+            if (document.getElementById('etapaAceptacion').checked) etapasSeleccionadas.push({ id: 'aceptacion', nombre: 'Aceptación y Entrega' });
+            
+            if (etapasSeleccionadas.length === 0) {
+                showNotification('Seleccione al menos una etapa', 'error');
+                return;
+            }
+            
+            // Generar ID y Licencia (mismos para todas las etapas)
+            const id = `CTR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            const licencia = `COM-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            
+            // Construir checklists base
+            const checklistsAsignados = [];
+            for (const [systemId, config] of selectedChecklists.entries()) {
+                const sistema = availableChecklists.find(c => c.id === systemId);
+                if (sistema) {
+                    const identificadores = [];
+                    for (let i = 1; i <= config.cantidad; i++) {
+                        identificadores.push(`${sistema.nombre.substring(0, 3).toUpperCase()}-${String(i).padStart(2, '0')}`);
+                    }
+                    checklistsAsignados.push({
+                        systemId: systemId,
+                        systemNombre: sistema.nombre,
+                        cantidad: config.cantidad,
+                        identificadores: identificadores,
+                        itemsBase: sistema.items || []
+                    });
+                }
+            }
+            
+            // Guardar proveedor una sola vez
+            const nuevoProveedor = {
+                id, licencia, nombre,
+                contacto: document.getElementById('newContractorContact').value,
+                email: document.getElementById('newContractorEmail').value,
+                telefono: document.getElementById('newContractorPhone').value,
+                disciplina: document.getElementById('newContractorDiscipline').value,
+                checklistsAsignados: checklistsAsignados,
+                progress: 0,
+                createdAt: new Date().toISOString()
+            };
+            
+            clientProveedores.push(nuevoProveedor);
+            saveClientProveedores();
+            renderProveedoresList();
+            
+            // Generar un archivo por cada etapa seleccionada
+            const archivos = [];
+            for (const etapa of etapasSeleccionadas) {
+                const archivo = {
+                    metadata: {
+                        version: "2.0",
+                        type: "proveedor-config",
+                        generatedAt: new Date().toISOString(),
+                        generatedBy: "Contratista General",
+                        etapa: etapa.id,
+                        etapaNombre: etapa.nombre
+                    },
+                    validacion: {
+                        proveedorId: id,
+                        licencia: licencia,
+                        checksum: btoa(`${id}:${licencia}`)
+                    },
+                    proveedor: {
+                        id: id,
+                        licencia: licencia,
+                        nombre: nombre,
+                        contacto: nuevoProveedor.contacto,
+                        email: nuevoProveedor.email,
+                        telefono: nuevoProveedor.telefono,
+                        disciplina: nuevoProveedor.disciplina
+                    },
+                    proyecto: {
+                        id: `PROJ-${Date.now()}`,
+                        nombre: 'Proyecto',
+                        cliente: 'Cliente',
+                        ubicacion: ''
+                    },
+                    etapa: {
+                        id: etapa.id,
+                        nombre: etapa.nombre,
+                        fechaFinProgramada: ''
+                    },
+                    checklists: checklistsAsignados
+                };
+                archivos.push({ archivo, etapaNombre: etapa.nombre });
+            }
+            
+            // Descargar archivos (uno por uno o en ZIP)
+            if (archivos.length === 1) {
+                // Si solo una etapa, descargar directamente
+                const jsonStr = JSON.stringify(archivos[0].archivo, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `proveedor-${nombre.replace(/\s/g, '-')}-etapa-${archivos[0].etapaNombre.replace(/\s/g, '-')}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showNotification(`Archivo para ${archivos[0].etapaNombre} generado`, 'success');
+            } else {
+                // Múltiples etapas: descargar todos en ZIP
+                showNotification(`Generando ${archivos.length} archivos...`, 'info');
+                
+                // Usar JSZip para crear un ZIP
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+                script.onload = () => {
+                    const zip = new JSZip();
+                    for (const item of archivos) {
+                        const jsonStr = JSON.stringify(item.archivo, null, 2);
+                        zip.file(`proveedor-${nombre.replace(/\s/g, '-')}-etapa-${item.etapaNombre.replace(/\s/g, '-')}.json`, jsonStr);
+                    }
+                    zip.generateAsync({ type: 'blob' }).then((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `proveedor-${nombre.replace(/\s/g, '-')}-todas-etapas.zip`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        showNotification(`${archivos.length} archivos generados en ZIP`, 'success');
+                    });
+                };
+                document.head.appendChild(script);
+            }
+            
+            // Cerrar modal y limpiar
+            document.getElementById('newContractorModal').style.display = 'none';
+            document.getElementById('newContractorName').value = '';
+            document.getElementById('newContractorContact').value = '';
+            document.getElementById('newContractorEmail').value = '';
+            document.getElementById('newContractorPhone').value = '';
+            selectedChecklists.clear();
+            
+            showNotification(`Proveedor ${nombre} creado. Archivos generados para ${archivos.length} etapas.`, 'success');
+        }
+        // Seleccionar todas las etapas
+        document.getElementById('seleccionarTodasEtapas')?.addEventListener('change', (e) => {
+            const checkboxes = [
+                'etapaPreComisionamiento',
+                'etapaComisionamientoFrio',
+                'etapaComisionamientoCaliente',
+                'etapaPruebasFuncionales',
+                'etapaAceptacion'
+            ];
+            checkboxes.forEach(id => {
+                const cb = document.getElementById(id);
+                if (cb) cb.checked = e.target.checked;
+            });
+        });
         
+        // Sincronizar "seleccionar todas" cuando se cambian individuales
+        const etapaCheckboxes = [
+            'etapaPreComisionamiento',
+            'etapaComisionamientoFrio',
+            'etapaComisionamientoCaliente',
+            'etapaPruebasFuncionales',
+            'etapaAceptacion'
+        ];
+        etapaCheckboxes.forEach(id => {
+            document.getElementById(id)?.addEventListener('change', () => {
+                const todasSeleccionadas = etapaCheckboxes.every(cbId => document.getElementById(cbId)?.checked);
+                const selectAll = document.getElementById('seleccionarTodasEtapas');
+                if (selectAll) selectAll.checked = todasSeleccionadas;
+            });
+        });
+        // Botón generar solo esta etapa
+        document.getElementById('generateSingleBtn')?.addEventListener('click', () => {
+            // Temporalmente seleccionar solo la etapa actual
+            const etapaActual = document.getElementById('nuevaEtapa').value;
+            const etapaNombre = document.getElementById('nuevaEtapa').options[document.getElementById('nuevaEtapa').selectedIndex].text;
+            
+            // Desmarcar todas
+            etapaCheckboxes.forEach(id => {
+                const cb = document.getElementById(id);
+                if (cb) cb.checked = false;
+            });
+            // Marcar la seleccionada
+            if (etapaActual === 'pre-comisionamiento') document.getElementById('etapaPreComisionamiento').checked = true;
+            else if (etapaActual === 'comisionamiento-frio') document.getElementById('etapaComisionamientoFrio').checked = true;
+            else if (etapaActual === 'comisionamiento-caliente') document.getElementById('etapaComisionamientoCaliente').checked = true;
+            else if (etapaActual === 'pruebas-funcionales') document.getElementById('etapaPruebasFuncionales').checked = true;
+            else if (etapaActual === 'aceptacion') document.getElementById('etapaAceptacion').checked = true;
+            
+            generarArchivosPorEtapas();
+        });
+        
+        // Botón generar múltiples etapas
+        document.getElementById('generateMultipleBtn')?.addEventListener('click', generarArchivosPorEtapas);        
         function crearNuevoProveedor() {
             const nombre = document.getElementById('newContractorName').value.trim();
             if (!nombre) {
