@@ -247,9 +247,9 @@
                             <h3>📁 Proyecto y Etapa</h3>
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="form-group"><label>ID del Proyecto</label><input type="text" id="proyectoId" class="form-input" readonly style="background: var(--bg-tertiary);"></div>
-                                <div class="form-group"><label>Nombre del Proyecto</label><input type="text" id="proyectoNombre" class="form-input" readonly style="background: var(--bg-tertiary);"></div>
-                                <div class="form-group"><label>Cliente</label><input type="text" id="proyectoCliente" class="form-input" readonly style="background: var(--bg-tertiary);"></div>
-                                <div class="form-group"><label>Ubicación</label><input type="text" id="proyectoUbicacion" class="form-input" readonly style="background: var(--bg-tertiary);"></div>
+                                <div class="form-group"><label>Nombre del Proyecto *</label><input type="text" id="proyectoNombre" class="form-input" placeholder="Nombre del proyecto"></div>
+                                <div class="form-group"><label>Cliente *</label><input type="text" id="proyectoCliente" class="form-input" placeholder="Nombre del cliente"></div>
+                                <div class="form-group"><label>Ubicación</label><input type="text" id="proyectoUbicacion" class="form-input" placeholder="Ubicación, lugar."></div>
                                 <div class="form-group"><label>Etapa</label>
                                     <select id="etapaId" class="form-select" disabled style="background: var(--bg-tertiary);">
                                         <option value="pre-comisionamiento">Pre-comisionamiento</option>
@@ -259,7 +259,7 @@
                                         <option value="aceptacion">Aceptación y Entrega</option>
                                     </select>
                                 </div>
-                                <div class="form-group"><label>Fecha Fin Programada</label><input type="date" id="etapaFechaFinProgramada" class="form-input" readonly style="background: var(--bg-tertiary);"></div>
+                                <div class="form-group"><label>Fecha Fin Programada</label><input type="date" id="etapaFechaFinProgramada" class="form-input"></div>
                             </div>
                             
                             <div class="prorroga-option mt-3">
@@ -269,7 +269,7 @@
                                 </label>
                                 <div id="prorrogaMotivoDiv" style="display: none;" class="mt-2">
                                     <label>Motivo de la prórroga *</label>
-                                    <textarea id="prorrogaMotivo" rows="2" class="form-textarea" placeholder="Ej: Retraso en entrega de materiales..."></textarea>
+                                    <textarea id="prorrogaMotivo" rows="2" class="form-textarea" placeholder="Ej: Retraso en entrega de materiales, condiciones climáticas, disponibilidad de personal..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -300,9 +300,8 @@
                                         </optgroup>
                                     </select>
                                 </div>
-                                <div class="form-group"><label>Identificador del Equipo</label><input type="text" id="sistemaIdentificador" class="form-input" readonly style="background: var(--bg-tertiary);"></div>
-                                <div class="form-group"><label>Ubicación</label><input type="text" id="sistemaUbicacion" class="form-input" readonly style="background: var(--bg-tertiary);"></div>
-                            </div>
+                                <div class="form-group"><label>Identificador del Equipo</label><input type="text" id="sistemaIdentificador" class="form-input" placeholder="Ej: TB-01, MTR-101, según su nomenclatura"><div class="text-xs text-muted mt-1">Nombre que el proveedor asigna al equipo para su seguimiento</div></div>
+                                <div class="form-group"><label>Ubicación del Equipo</label><input type="text" id="sistemaUbicacion" class="form-input" placeholder="Sala eléctrica, Área de proceso, etc."><div class="text-xs text-muted mt-1">Ubicación física donde se encuentra el equipo</div></div>
                         </div>
                         
                         <!-- Checklist con opciones: Cumple, No Cumple, N/A -->
