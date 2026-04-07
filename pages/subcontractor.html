@@ -513,23 +513,40 @@
         function cargarChecklistEnEditor(checklist) {
             currentChecklistId = checklist.id;
             
+            // ============================================
+            // CAMPOS DE SOLO LECTURA (vienen del contratista)
+            // ============================================
             document.getElementById('proyectoId').value = checklist.proyecto?.id || '';
+            document.getElementById('etapaId').value = checklist.etapa?.id || 'pre-comisionamiento';
+            document.getElementById('sistemaTipo').value = checklist.sistema?.tipo || 'electrical';
+            document.getElementById('sistemaId').value = checklist.sistema?.id || 'tablero-media-tension';
+            
+            // ============================================
+            // CAMPOS EDITABLES POR EL PROVEEDOR
+            // ============================================
+            // Proyecto
             document.getElementById('proyectoNombre').value = checklist.proyecto?.nombre || '';
             document.getElementById('proyectoCliente').value = checklist.proyecto?.cliente || '';
             document.getElementById('proyectoUbicacion').value = checklist.proyecto?.ubicacion || '';
-            document.getElementById('etapaId').value = checklist.etapa?.id || 'pre-comisionamiento';
+            
+            // Etapa
             document.getElementById('etapaFechaFinProgramada').value = checklist.etapa?.fechaFinProgramada || '';
             
+            // Sistema/Equipo
+            document.getElementById('sistemaIdentificador').value = checklist.sistema?.identificador || '';
+            document.getElementById('sistemaUbicacion').value = checklist.sistema?.ubicacion || '';
+            
+            // ============================================
+            // PRÓRROGA
+            // ============================================
             const isProrroga = checklist.metadata?.isProrroga || false;
             document.getElementById('isProrrogaCheckbox').checked = isProrroga;
             document.getElementById('prorrogaMotivoDiv').style.display = isProrroga ? 'block' : 'none';
             document.getElementById('prorrogaMotivo').value = checklist.metadata?.prorrogaMotivo || '';
             
-            document.getElementById('sistemaTipo').value = checklist.sistema?.tipo || 'electrical';
-            document.getElementById('sistemaId').value = checklist.sistema?.id || 'tablero-media-tension';
-            document.getElementById('sistemaIdentificador').value = checklist.sistema?.identificador || '';
-            document.getElementById('sistemaUbicacion').value = checklist.sistema?.ubicacion || '';
-            
+            // ============================================
+            // CARGAR ITEMS DEL CHECKLIST
+            // ============================================
             const sistemaData = getChecklistItemsBySystem(checklist.sistema?.id);
             if (sistemaData) {
                 currentChecklistItems = sistemaData.items.map(item => {
@@ -646,12 +663,16 @@
             const isProrroga = document.getElementById('isProrrogaCheckbox').checked;
             const prorrogaMotivo = isProrroga ? document.getElementById('prorrogaMotivo').value.trim() : null;
             
+            // Calcular estadísticas considerando N/A
             const total = currentChecklistItems.length;
             const completados = currentChecklistItems.filter(i => i.status === 'completed').length;
             const na = currentChecklistItems.filter(i => i.status === 'na').length;
             const pendientes = total - completados - na;
             const porcentaje = (total - na) > 0 ? Math.round((completados / (total - na)) * 100) : 0;
             
+            // ============================================
+            // CONSTRUIR DATOS DEL CHECKLIST
+            // ============================================
             const checklistData = {
                 id: currentChecklistId,
                 proveedor: { 
@@ -659,23 +680,26 @@
                     nombre: proveedorNombre, 
                     licencia: licenciaKey 
                 },
+                // PROYECTO - campos editables por el proveedor
                 proyecto: {
-                    id: document.getElementById('proyectoId').value,
-                    nombre: document.getElementById('proyectoNombre').value,
-                    cliente: document.getElementById('proyectoCliente').value,
-                    ubicacion: document.getElementById('proyectoUbicacion').value
+                    id: document.getElementById('proyectoId').value,           // Solo lectura
+                    nombre: document.getElementById('proyectoNombre').value,   // EDITABLE
+                    cliente: document.getElementById('proyectoCliente').value, // EDITABLE
+                    ubicacion: document.getElementById('proyectoUbicacion').value  // EDITABLE
                 },
+                // ETAPA - campos editables por el proveedor
                 etapa: {
-                    id: document.getElementById('etapaId').value,
+                    id: document.getElementById('etapaId').value,  // Solo lectura
                     nombre: document.getElementById('etapaId').options[document.getElementById('etapaId').selectedIndex]?.text || '',
-                    fechaFinProgramada: document.getElementById('etapaFechaFinProgramada').value
+                    fechaFinProgramada: document.getElementById('etapaFechaFinProgramada').value  // EDITABLE
                 },
+                // SISTEMA - campos editables por el proveedor
                 sistema: {
-                    id: document.getElementById('sistemaId').value,
+                    id: document.getElementById('sistemaId').value,  // Solo lectura
                     nombre: getSystemName(document.getElementById('sistemaId').value),
-                    tipo: document.getElementById('sistemaTipo').value,
-                    identificador: document.getElementById('sistemaIdentificador').value,
-                    ubicacion: document.getElementById('sistemaUbicacion').value
+                    tipo: document.getElementById('sistemaTipo').value,  // Solo lectura
+                    identificador: document.getElementById('sistemaIdentificador').value,  // EDITABLE
+                    ubicacion: document.getElementById('sistemaUbicacion').value  // EDITABLE
                 },
                 checklist: {
                     [document.getElementById('sistemaTipo').value]: currentChecklistItems
@@ -695,6 +719,7 @@
                 updatedAt: new Date().toISOString()
             };
             
+            // Guardar
             const index = proveedorChecklists.findIndex(c => c.id === currentChecklistId);
             if (index !== -1) {
                 proveedorChecklists[index] = checklistData;
